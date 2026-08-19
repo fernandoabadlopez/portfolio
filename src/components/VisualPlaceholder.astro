@@ -7,29 +7,43 @@ interface Props {
 const { kind, description } = Astro.props;
 ---
 
-<figure
-  class="visual-placeholder border-border relative my-12 flex items-center justify-center border border-dashed bg-transparent p-8"
-  data-kind={kind}
->
-  <span class="text-fg-muted absolute top-4 left-4 font-mono text-xs tracking-[0.1em] uppercase">
-    {kind} visual
-  </span>
-  <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
-    {description}
-  </p>
+<figure class="visual-placeholder my-12" data-kind={kind}>
+  <span class="fig-label text-fg-muted block font-mono text-xs tracking-[0.1em] uppercase"></span>
+
+  <div
+    class="fig-box border-border relative flex items-center justify-center border border-dashed bg-transparent p-8"
+  >
+    <span class="text-fg-muted absolute top-4 left-4 font-mono text-xs tracking-[0.1em] uppercase">
+      {kind} visual
+    </span>
+    <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
+      {description}
+    </p>
+  </div>
 </figure>
 
 <style>
   .visual-placeholder {
     margin-inline: 0;
+    /* Counter is seeded by .case-body, which sets fig-major to the case
+       study's `order` and resets fig-minor. See CaseStudyLayout.astro. */
+    counter-increment: fig-minor;
   }
 
-  .visual-placeholder[data-kind='hero'] {
+  .fig-label {
+    margin-bottom: 0.75rem;
+  }
+
+  .fig-label::before {
+    content: 'FIG ' counter(fig-major) '.' counter(fig-minor);
+  }
+
+  .visual-placeholder[data-kind='hero'] .fig-box {
     aspect-ratio: 16 / 9;
   }
 
-  .visual-placeholder[data-kind='inline'],
-  .visual-placeholder[data-kind='gallery'] {
+  .visual-placeholder[data-kind='inline'] .fig-box,
+  .visual-placeholder[data-kind='gallery'] .fig-box {
     aspect-ratio: 4 / 3;
   }
 </style>

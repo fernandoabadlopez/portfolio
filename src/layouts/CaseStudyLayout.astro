@@ -7,10 +7,11 @@ interface Props {
   title: string;
   tagline: string;
   stack?: string[];
+  order?: number;
   lang?: Lang;
 }
 
-const { title, tagline, stack = [], lang = 'en' } = Astro.props;
+const { title, tagline, stack = [], order = 0, lang = 'en' } = Astro.props;
 ---
 
 <BaseLayout title={title} lang={lang}>
@@ -29,7 +30,9 @@ const { title, tagline, stack = [], lang = 'en' } = Astro.props;
 
     <hr class="border-border my-12 border-0 border-t" />
 
-    <div class="case-body">
+    <!-- Seeds the figure counters: fig-major is the case study's order and
+         never increments, fig-minor counts placeholders within this page. -->
+    <div class="case-body" style={`counter-reset: fig-major ${order} fig-minor 0`}>
       <slot />
     </div>
   </article>
