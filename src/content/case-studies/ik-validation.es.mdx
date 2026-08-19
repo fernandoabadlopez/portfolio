@@ -1,0 +1,97 @@
+---
+title: "Validación de solvers de cinemática inversa contra datos de Motion Capture"
+tagline: "Add-on de Blender que compara esqueletos generados por IK frente a datos MoCap reales, midiendo el error posicional articulación por articulación y fotograma a fotograma."
+stack: ["Python", "Blender 4.2", "bpy", "Pandas", "Matplotlib"]
+order: 3
+lang: "es"
+slug: "ik-validation"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: el vídeo silencioso de 1 minuto ya existente, mostrando el add-on funcionando. En loop, autoplay silencioso."
+/>
+
+## Contexto
+
+La cinemática inversa (IK) es la técnica que calcula los ángulos articulares necesarios para que el extremo de una cadena de huesos (mano, pie) alcance una posición objetivo en el espacio. Es lo que hace que un personaje 3D animado apoye el pie en el suelo o que un brazo robótico llegue a un punto concreto. Existen múltiples algoritmos para resolverla, cada uno con sus trade-offs de velocidad, estabilidad y precisión, y ninguno es universalmente mejor: el algoritmo correcto depende del uso.
+
+El Instituto de Biomecánica de Valencia (IBV) usa modelos digitales del cuerpo humano para aplicar índices ergonómicos estandarizados (REBA, OWAS) sobre posturas de trabajadores. Esos índices solo son científicamente válidos si el modelo digital reproduce el movimiento real con precisión espacial. Si el esqueleto está mal colocado, los ángulos que evalúan los índices son incorrectos y el análisis pierde validez.
+
+De ahí la pregunta que motiva el TFG: ¿son los solvers IK disponibles suficientemente precisos para este propósito, y cómo se mide eso de forma reproducible?
+
+## Overview
+
+Add-on de Python para Blender 4.2 que automatiza un pipeline de validación posicional para solvers IK. Carga en escena un esqueleto MoCap (verdad de terreno) y un esqueleto procedural animado por IK, los alinea, los conecta mediante restricciones, y mide el error euclidiano por articulación y por fotograma. Exporta los resultados a CSV para análisis con Pandas y Matplotlib.
+
+El objetivo del TFG no era optimizar solvers, era construir el entorno que permite evaluarlos. Con esa herramienta, comparé las tres configuraciones IK disponibles en Blender (Estándar, iTaSC Simulation, iTaSC Animation) sobre 8 segundos de datos MoCap reales del IBV y caractericé sus patologías específicas.
+
+## El pipeline: cinco fases operativas
+
+El add-on presenta un panel propio en Blender con cinco secciones que se ejecutan en orden. Cada una resuelve una parte concreta del problema de validación.
+
+**Identificación y coloreado**. Los dos esqueletos entran en escena diferenciados por color (MoCap en azul, IK en rojo). Suena trivial, pero cuando estás depurando 240 fotogramas de dos esqueletos superpuestos, no lo es.
+
+**Alineación espacial de raíces**. Los dos esqueletos parten de sistemas de coordenadas distintos. El add-on permite elegir la dirección de la alineación (mover el IK al MoCap o viceversa), imprescindible según el flujo de trabajo del usuario.
+
+**Generación de empties de muñeca**. Objetos auxiliares en el espacio 3D que actúan como objetivos para el solver IK, indicándole dónde tiene que llegar cada mano. Sin estos empties, el solver no tiene referencia espacial para los extremos de la cadena, que son precisamente las articulaciones más difíciles de replicar.
+
+**Restricciones Copy Location en tres puntos**. Solo se restringen tres articulaciones: caderas y las dos muñecas. La cadera actúa como raíz, las muñecas como extremos. Restringir solo estos tres puntos guía al solver sin sobredeterminar el sistema, dejando que las articulaciones intermedias se resuelvan de forma natural. Sobredeterminar (restringir todo) invalida la comparativa porque anula al propio solver.
+
+**Métricas y exportación**. Antes de medir, el add-on establece un mapeo entre los huesos de ambos esqueletos, asignando a cada hueso del MoCap su equivalente funcional en el IK. Los dos esqueletos no son idénticos en estructura ni en proporciones, así que este mapeo introduce un error de base presente en los tres solvers por igual. Con el mapeo establecido, se mide el error posicional euclidiano articulación por articulación en cada fotograma, con dos salidas: verbose por pantalla para depuración en vivo, y exportación a CSV para el análisis posterior.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Captura del panel del add-on en Blender, mostrando las cinco secciones. Ya existe en la presentación de la defensa."
+/>
+
+## Los tres solvers evaluados
+
+Blender ofrece tres configuraciones IK, cada una con una lógica interna radicalmente distinta.
+
+**Algoritmo Estándar**. Solver nativo, heurístico iterativo. No resuelve la cadena con una ecuación exacta: en cada fotograma hace aproximaciones sucesivas ajustando articulaciones hasta que el extremo se acerca al objetivo. Ligero computacionalmente, sin modelo físico detrás.
+
+**iTaSC Simulation**. Solver basado en el jacobiano (la matriz que relaciona las velocidades articulares con la velocidad del extremo de la cadena), con motor físico añadido. Incorpora restricciones de inercia: no solo intenta llegar al objetivo, simula cómo lo haría un cuerpo con masa y resistencia al movimiento.
+
+**iTaSC Animation**. También jacobiano, sin motor físico, con amortiguación por el método DLS (Damped Least Squares). El parámetro lambda (fijado a 0.5) controla el nivel de amortiguación: valores altos evitan singularidades articulares pero ralentizan la convergencia. iTaSC en ambos modos está diseñado originalmente para entornos robóticos, con movimientos controlados y predecibles.
+
+Los tres se someten a la misma secuencia: 8 segundos, 240 fotogramas, datos MoCap reales del IBV.
+
+## Qué encontró la validación
+
+**El Estándar** produce un error sistemático y estable en el tiempo. Tronco entre 5 y 7 cm con dispersión mínima, cabeza alrededor de 10 cm (esperable por ser extremo superior de cadena), muñecas entre 13 y 17 cm (extremos de las cadenas de brazos). El error es alto en términos absolutos, pero es constante y caracterizable, lo que significa que se puede corregir o compensar en un análisis posterior.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Boxplot del error por articulación para el Estándar. Ya existe en la presentación."
+/>
+
+**iTaSC Simulation** entra en inestabilidad progresiva. El error crece a lo largo de la secuencia y aparecen picos periódicos cíclicos. Cabeza y cuello superan los 30 cm, tronco alrededor de 12-15 cm (el doble que el Estándar). La causa está identificada: el motor físico tiene sentido en robótica, pero el movimiento humano real es variable, con cambios de dirección bruscos, y el solver no puede seguirlo. Responde con retraso, acumula error y lo libera de golpe.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Gráfica temporal del tronco para iTaSC Simulation, mostrando los picos periódicos crecientes."
+/>
+
+**iTaSC Animation** colapsa en el primer segundo. El solver no consigue inicializarse correctamente con el jacobiano amortiguado y queda atrapado en una configuración incorrecta de la que nunca se recupera. Luego se estabiliza pero en niveles altos (cabeza en 28 cm, cuello en 23 cm). Numéricamente parece competitivo con el Estándar en tronco, pero es un espejismo: comportamentalmente son opuestos, uno es constante y predecible, el otro colapsa desde el arranque.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Gráfica temporal del tronco para iTaSC Animation, mostrando el colapso inicial y la estabilización posterior."
+/>
+
+## Conclusión de la validación
+
+El punto no es cuál es el "mejor" solver, sino que el entorno permite discriminar sus comportamientos con claridad y caracterizar sus patologías específicas. Que los errores absolutos sean elevados no es un problema de la herramienta, es exactamente la información que un sistema de validación debe ser capaz de detectar. Sin este pipeline, cualquier análisis ergonómico sobre modelos digitales carece de base cuantitativa que respalde su fidelidad al movimiento real.
+
+## Alcance del proyecto y confidencialidad
+
+El código fuente del add-on y los datos MoCap están sujetos a acuerdo de confidencialidad con el IBV, que está desarrollando esta línea de trabajo dentro de un proyecto industrial mayor. La memoria completa del TFG (ERGO TWIN) es pública y accesible en el repositorio institucional de la Universitat de València.
+
+## Links
+
+- Memoria del TFG (ERGO TWIN) — enlace pendiente al repositorio institucional UV
+- Instituto de Biomecánica de Valencia — [ibv.org](https://www.ibv.org)

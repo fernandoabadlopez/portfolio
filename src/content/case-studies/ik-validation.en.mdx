@@ -1,0 +1,97 @@
+---
+title: "Validation of inverse kinematics solvers against Motion Capture data"
+tagline: "Blender add-on that compares IK-generated skeletons against real MoCap data, measuring positional error per joint and per frame."
+stack: ["Python", "Blender 4.2", "bpy", "Pandas", "Matplotlib"]
+order: 3
+lang: "en"
+slug: "ik-validation"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: existing silent 1-minute video showing the add-on in action. Looping, silent autoplay."
+/>
+
+## Context
+
+Inverse kinematics (IK) is the technique that computes the joint angles needed for the end of a bone chain (hand, foot) to reach a target position in space. It's what makes an animated 3D character plant its foot on the ground or a robotic arm reach a specific point. Multiple algorithms exist to solve it, each with its own trade-offs of speed, stability, and precision, and none is universally best: the right algorithm depends on the use case.
+
+The Instituto de Biomecánica de Valencia (IBV) uses digital human body models to apply standardized ergonomic indices (REBA, OWAS) on worker postures. Those indices are only scientifically valid if the digital model reproduces real movement with spatial precision. If the skeleton is misplaced, the angles evaluated by the indices are wrong and the analysis loses validity.
+
+Hence the question that motivates the project: are the IK solvers available in Blender precise enough for this purpose, and how do you measure that reproducibly?
+
+## Overview
+
+Python add-on for Blender 4.2 that automates a positional validation pipeline for IK solvers. It loads a MoCap skeleton (ground truth) and a procedurally IK-animated skeleton into the scene, aligns them, connects them through constraints, and measures the Euclidean error per joint and per frame. It exports results to CSV for downstream analysis with Pandas and Matplotlib.
+
+The goal wasn't to optimize solvers, it was to build the environment that lets you evaluate them. With that tool, I compared the three IK configurations available in Blender (Standard, iTaSC Simulation, iTaSC Animation) over 8 seconds of real MoCap data from IBV and characterized their specific failure modes.
+
+## The pipeline: five operational stages
+
+The add-on presents a custom panel in Blender with five sections executed in order. Each one solves a specific part of the validation problem.
+
+**Identification and coloring**. Both skeletons enter the scene color-coded (MoCap in blue, IK in red). It sounds trivial, but when you're debugging 240 frames of two overlapping skeletons, it isn't.
+
+**Root spatial alignment**. The two skeletons come from different coordinate systems. The add-on lets you pick the alignment direction (move IK to MoCap or vice versa), which matters depending on the user's workflow.
+
+**Wrist empty generation**. Auxiliary 3D-space objects that act as IK solver targets, telling the skeleton where each hand needs to reach. Without these empties the solver has no spatial reference for the chain ends, which are the hardest joints to replicate.
+
+**Copy Location constraints on three points**. Only three joints are constrained: hips and both wrists. The hip acts as the root, the wrists as the ends. Restricting only these three guides the solver without over-constraining the system, letting the intermediate joints resolve naturally. Over-constraining (locking everything) invalidates the comparison because it bypasses the solver itself.
+
+**Metrics and export**. Before measuring, the add-on establishes a mapping between the bones of both skeletons, assigning each MoCap bone its functional equivalent in the IK skeleton. The two skeletons are not identical in structure or proportions, so this mapping introduces a baseline error present equally in all three solvers. With the mapping in place, the Euclidean positional error is measured joint by joint on every frame, with two outputs: verbose print for live debugging, and CSV export for downstream analysis.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Screenshot of the add-on panel in Blender, showing the five sections. Already exists in the defense slides."
+/>
+
+## The three evaluated solvers
+
+Blender offers three IK configurations, each with radically different internal logic.
+
+**Standard algorithm**. Native solver, heuristic iterative. It doesn't solve the chain with an exact equation: on every frame it makes successive approximations, adjusting joints until the end reaches the target. Computationally light, no physical model behind it.
+
+**iTaSC Simulation**. Jacobian-based solver (the matrix relating joint velocities to end-effector velocity), with an added physics engine. Incorporates inertia constraints: it doesn't just try to reach the target, it simulates how a body with mass and resistance would move to reach it.
+
+**iTaSC Animation**. Also Jacobian, no physics engine, with damping via DLS (Damped Least Squares). The lambda parameter (set to 0.5) controls the damping level: high values avoid joint singularities but slow down convergence. iTaSC in both modes was originally designed for robotic environments, with controlled and predictable movements.
+
+The three are run against the same sequence: 8 seconds, 240 frames, real MoCap data from IBV.
+
+## What the validation found
+
+**Standard** produces a systematic and time-stable error. Trunk between 5 and 7 cm with minimal dispersion, head around 10 cm (expected as upper chain end), wrists between 13 and 17 cm (arm chain ends). The error is high in absolute terms, but it's constant and characterizable, meaning it can be corrected or compensated for in downstream analysis.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Boxplot of per-joint error for Standard. Already exists in the defense slides."
+/>
+
+**iTaSC Simulation** enters progressive instability. The error grows across the sequence and cyclic periodic peaks appear. Head and neck exceed 30 cm, trunk around 12-15 cm (twice the Standard). The cause is identified: the physics engine makes sense in robotics, but real human motion is variable with abrupt direction changes, and the solver can't follow it. It responds with delay, accumulates error, and releases it in bursts.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Time series of the trunk for iTaSC Simulation, showing the growing periodic peaks."
+/>
+
+**iTaSC Animation** collapses in the first second. The solver fails to initialize properly with the damped Jacobian and gets stuck in an incorrect configuration it never recovers from. It later stabilizes but at high levels (head at 28 cm, neck at 23 cm). Numerically it looks competitive with Standard on the trunk, but that's a mirage: behaviorally they're opposites. One is stable and predictable, the other collapses from the start.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Time series of the trunk for iTaSC Animation, showing the initial collapse and later stabilization."
+/>
+
+## Conclusion of the validation
+
+The point isn't which solver is "best", it's that the environment discriminates their behaviors clearly and characterizes their specific failure modes. That the absolute errors are high isn't a tool problem, it's exactly the information a validation system should be able to detect. Without this pipeline, any ergonomic analysis on digital models lacks quantitative backing to support its fidelity to real motion.
+
+## Project scope and confidentiality
+
+The add-on source code and MoCap data are covered by a confidentiality agreement with IBV, which is developing this line of work within a larger industrial project. The full project memoir (ERGO TWIN) is public and accessible in the institutional repository of the Universitat de València.
+
+## Links
+
+- Project memoir (ERGO TWIN) — pending link to UV institutional repository
+- Instituto de Biomecánica de Valencia — [ibv.org](https://www.ibv.org)
