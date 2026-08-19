@@ -45,12 +45,9 @@ export function alternatePath(pathname: string, from: Lang, to: Lang): string {
   return paths.home[to];
 }
 
-/** Label for the section indicator bar. Not in the JSON, which is content-owned. */
-const sectionWord = { en: 'Section', es: 'Sección' } as const;
-
 /**
- * Breadcrumb trail for the nav's section indicator, e.g. ['Section', 'Work',
- * 'bloom']. Rendered uppercase by CSS. Home has no indicator, so returns null.
+ * Breadcrumb trail for the nav's section indicator, e.g. ['Work', 'bloom'].
+ * Rendered uppercase by CSS. Home has no indicator, so returns null.
  */
 export function sectionTrail(pathname: string, lang: Lang): string[] | null {
   if (pathname === paths.home[lang]) return null;
@@ -60,12 +57,11 @@ export function sectionTrail(pathname: string, lang: Lang): string[] | null {
 
   if (pathname.startsWith(workBase)) {
     const slug = pathname.slice(workBase.length).replace(/\/$/, '');
-    const trail = [sectionWord[lang], labels.work];
-    return slug ? [...trail, slug] : trail;
+    return slug ? [labels.work, slug] : [labels.work];
   }
 
   for (const key of ['experiments', 'gpu', 'about'] as const) {
-    if (pathname === paths[key][lang]) return [sectionWord[lang], labels[key]];
+    if (pathname === paths[key][lang]) return [labels[key]];
   }
 
   return null;

@@ -37,17 +37,18 @@ const { title, tagline, stack = [], lang = 'en' } = Astro.props;
 
 <style>
   /*
-    Three-column grid: the middle track holds the prose at reading width, the
-    outer tracks are gutters. Content defaults to the prose column; media and
-    code break out across all three so they are not capped at 68ch.
+    Two-column grid: the first track holds the prose at reading width, flush
+    left with the rest of the page; the second is trailing space. Content
+    defaults to the prose column; media and code span both tracks so they are
+    not capped at 68ch.
   */
   .case-body {
     display: grid;
-    grid-template-columns: 1fr min(var(--width-prose), 100%) 1fr;
+    grid-template-columns: min(var(--width-prose), 100%) 1fr;
   }
 
   .case-body > :global(*) {
-    grid-column: 2;
+    grid-column: 1;
   }
 
   .case-body > :global(figure.visual-placeholder),
