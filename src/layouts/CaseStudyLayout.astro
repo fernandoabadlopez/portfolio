@@ -1,0 +1,21 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  tagline: string;
+  lang?: 'en' | 'es';
+}
+
+const { title, tagline, lang = 'en' } = Astro.props;
+---
+
+<BaseLayout title={title} lang={lang}>
+  <article>
+    <header>
+      <h1>{title}</h1>
+      <p>{tagline}</p>
+    </header>
+    <slot />
+  </article>
+</BaseLayout>
