@@ -1,0 +1,104 @@
+---
+title: "Bloom post-processing pipeline in OpenGL"
+tagline: "Post-processing effect implemented entirely on GPU, with a 5-pass pipeline and separable Gaussian blur."
+stack: ["OpenGL", "GLSL", "C++", "tinyobjloader", "stb_image"]
+order: 1
+lang: "en"
+slug: "bloom"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: short looping GIF of the scene with the B key toggling bloom on and off. Ideal duration 5-8s, no audio."
+/>
+
+## Context
+
+Bloom is the luminous halo that appears around the brightest areas of an image. It shows up in modern film and games, and it's built by isolating the brightest pixels of the scene, blurring them, and adding them back on top of the original image. This project implements the full effect on GPU over a scene with dynamic shadows.
+
+## Overview
+
+Bloom on GPU over a scene that already had shadow mapping integrated. The technique didn't come with the scene, the scene came with shadows and I built the four bloom passes on top until the pipeline closed at 5 passes per frame. The goal was to understand every piece (why HDR, why separable, why additive blending) rather than just getting the visual effect.
+
+## 5-pass architecture
+
+Bloom needs to render the scene to an intermediate texture, isolate the bright pixels by luminance, blur them, and compose the result back over the original scene. Four operations on different data, each with its own shader program. Combined with the shadow map pass already in the base, the pipeline runs 5 passes per frame:
+
+1. **Shadow map** into `depth_FBO`.
+2. **Lit scene with shadows** into `scene_FBO` in HDR format.
+3. **Brightness filter by luminance** into `bright_FBO`.
+4. **Separable Gaussian blur** in two 1D passes (horizontal and vertical) into `blur_h_FBO` and `blur_v_FBO`, at reduced resolution 256×256.
+5. **Additive composition** of the scene with the blurred bloom into the default framebuffer.
+
+The reason for splitting the steps into five programs instead of fusing operations is that each pass works on a different domain (3D geometry, per-pixel filtering, directional blur, composition) and needs different texture accesses and GPU state. Cramming everything into one giant shader breaks locality and makes debugging painful.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Pipeline diagram. Placeholder for now; to be redone in SVG consistent with the portfolio style."
+/>
+
+## HDR format and render-to-texture
+
+The first bloom pass renders the full scene into `scene_FBO`. The color texture uses `GL_RGB16F` (16-bit floating point per channel) instead of the standard 8-bit integer format. The reason: the brightness filter in the next pass needs values above 1.0 to tell "lit" from "very bright". In 8-bit everything saturates to the same value and the filter can't distinguish anything. In float there's headroom for metallic specular highlights to exceed 1.0 and stand out.
+
+For the depth attachment I used a Renderbuffer instead of a texture. Renderbuffers are more efficient when depth is only needed for the depth test and never read back. I don't read it here, so a texture would have been overkill.
+
+## Brightness extraction with perceptual luminance
+
+Pass 2 takes the HDR texture and produces one where only pixels whose luminance exceeds a threshold remain. The rest is painted black.
+
+For luminance I use the Rec.709 perceptual formula (digital television standard): `0.2126·R + 0.7152·G + 0.0722·B`. The weights reflect human eye sensitivity: green dominates, blue barely contributes. Plain RGB average (the naive formula) would give a bloom that responds equally to a saturated blue and a saturated green, which doesn't match how we perceive brightness.
+
+This pass, like all the following ones, runs on a full-screen quad (two triangles in NDC coordinates from −1 to 1). The vertex shader applies no transformation: the vertices are already where they need to be. All actual work happens in the fragment shader.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Capture of the bright pass texture alone, showing only the isolated highlights on a black background."
+/>
+
+## Separable Gaussian blur
+
+The critical step algorithmically is the blur. A 2D Gaussian kernel of size N×N requires N² samples per pixel: quadratic cost. The 2D Gaussian is mathematically separable, it decomposes as the product of two 1D Gaussians, one horizontal and one vertical. Applying a horizontal blur first and then a vertical one gives the same result as the direct 2D blur, but with O(2N) cost instead of O(N²).
+
+*GPU Pro 2* quantifies it for a 9×9 kernel: direct 2D convolution costs 242 operations per pixel; separable costs 53. A 78% reduction for the same visual result. The bigger the kernel, the wider the gap.
+
+I implemented both passes (horizontal and vertical) reusing the same shader through a `uHorizontal` uniform that acts as a direction switch. The input texture changes between passes: `bright_texture` in pass 3a, `blur_h_texture` in pass 3b. The final result lands in `blur_v_texture`.
+
+I also dropped the blur resolution to 256×256. Downsampling the blur pass is standard post-processing practice: it cuts cost and further softens the halo, which is what we want. Bloom doesn't need fine detail, we're after the opposite.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Side-by-side comparison: bright pass before blur / after horizontal blur / after vertical blur."
+/>
+
+## Additive final composition
+
+The final pass takes two textures: the original scene (with lighting and shadows) and the blurred bloom. The operation is a sum, not a blend:
+
+```glsl
+result = clamp(scene + bloom * uBloomIntensity, 0.0, 1.0);
+```
+
+Additive because bloom represents extra light added on top of the scene, not replacing it. Where the scene was already bright, the bloom is too, and the sum makes that spot even more luminous. That's what physically happens when intense light scatters in the eye or the lens. A linear blend (`mix`) would flatten the result: it would lower the brightness of the bright areas instead of reinforcing them.
+
+The `uBloomIntensity` uniform controls the strength of the effect at runtime. `uBloomEnabled` toggles bloom on and off with the B key for direct side-by-side comparison in the same session.
+
+<VisualPlaceholder
+  kind="inline"
+  description="GIF of the toggle in action, alternating bloom on/off over the same scene in real time."
+/>
+
+## Extensions
+
+Two additions beyond the original scope:
+
+- Loading an external OBJ model (LPS Head, ~18,000 vertices) via `tinyobjloader`, with its original texture loaded through `stb_image`.
+- A `uUseTexture` uniform in the fragment shader to switch between procedural material and color texture, allowing the same scene to mix classic-material objects (sphere, teapot, torus) and textured ones.
+
+## Links
+
+- Repository: [pending public release]
+- Reference: *GPU Pro 2*, Section 2.3

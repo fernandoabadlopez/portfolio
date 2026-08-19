@@ -1,0 +1,104 @@
+---
+title: "Bloom post-processing pipeline en OpenGL"
+tagline: "Efecto de post-procesado implementado íntegramente en GPU, con pipeline de 5 pasadas y blur gaussiano separable."
+stack: ["OpenGL", "GLSL", "C++", "tinyobjloader", "stb_image"]
+order: 1
+lang: "es"
+slug: "bloom"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: GIF corto en loop mostrando la escena con la tecla B activando/desactivando el bloom. Duración ideal 5-8s, sin audio."
+/>
+
+## Contexto
+
+El Bloom es el halo luminoso que aparece alrededor de las zonas más brillantes de una imagen. Está presente en cine y videojuegos modernos, y se obtiene aislando los píxeles más luminosos de la escena, difuminándolos, y sumándolos encima de la imagen original. Este proyecto implementa el efecto completo en GPU sobre una escena con sombras dinámicas.
+
+## Overview
+
+Bloom en GPU sobre una escena con shadow mapping ya integrado. La técnica no vino con la escena, la escena vino con sombras y sobre eso monté las cuatro pasadas del bloom hasta cerrar un pipeline de 5 pasadas por frame. El objetivo era entender cada pieza (por qué HDR, por qué separable, por qué suma aditiva) y no solo obtener el efecto visual.
+
+## Arquitectura de 5 pasadas
+
+El bloom necesita renderizar la escena a una textura intermedia, aislar los brillos por luminancia, difuminarlos y componer el resultado sobre la escena original. Cuatro operaciones sobre datos distintos, cada una con su programa de shaders. Sumadas a la pasada de shadow map que ya existía en la base, salen 5 pasadas por frame:
+
+1. **Shadow map** hacia `depth_FBO`.
+2. **Escena iluminada con sombras** hacia `scene_FBO` en formato HDR.
+3. **Filtrado de brillos por luminancia** hacia `bright_FBO`.
+4. **Blur gaussiano separable** en dos pasadas 1D (horizontal y vertical) hacia `blur_h_FBO` y `blur_v_FBO`, a resolución reducida 256×256.
+5. **Composición aditiva** de la escena con el bloom difuminado sobre el framebuffer por defecto.
+
+La razón de separar los pasos en cinco programas y no fusionar operaciones es que cada pasada trabaja sobre un dominio distinto (geometría 3D, filtrado por píxel, blur direccional, composición) y necesita accesos a texturas y estados de GPU distintos. Meterlo todo en un shader gigante rompe la localidad y complica el debug.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Diagrama del pipeline. Placeholder por ahora; se rehace en SVG consistente con el estilo del portfolio."
+/>
+
+## Formato HDR y captura a textura
+
+La primera pasada del bloom renderiza la escena completa a `scene_FBO`. La textura de color usa `GL_RGB16F` (16 bits en punto flotante por canal) en lugar del entero estándar de 8 bits. El motivo: el filtro de brillo de la pasada siguiente necesita valores por encima de 1.0 para separar "iluminado" de "muy brillante". En 8 bits todo se satura al mismo valor y el filtro no distingue nada. En float sí hay margen para que los brillos especulares metálicos superen 1.0 y destaquen.
+
+Para el depth attachment usé un Renderbuffer en lugar de una textura. Los Renderbuffers son más eficientes cuando el depth solo se necesita para el test de profundidad y no se va a leer después. Aquí no lo leo, así que textura habría sido overkill.
+
+## Extracción de brillos con luminancia perceptual
+
+La pasada 2 recibe la textura HDR y produce otra donde solo quedan los píxeles cuya luminosidad supera un umbral. El resto se pinta negro.
+
+Para calcular luminosidad uso la fórmula perceptual Rec.709 (estándar de televisión digital): `0.2126·R + 0.7152·G + 0.0722·B`. Los pesos reflejan la sensibilidad del ojo humano: el verde domina, el azul apenas contribuye. La media aritmética RGB (la fórmula ingenua) daría un bloom que responde igual a un azul saturado que a un verde saturado, y eso no coincide con cómo percibimos el brillo.
+
+Esta pasada, como todas las siguientes, se ejecuta sobre un quad de pantalla completa (dos triángulos en coordenadas NDC de −1 a 1). El vertex shader no aplica ninguna transformación: los vértices ya están donde tienen que estar. Todo el trabajo real ocurre en el fragment shader.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Captura de la textura de bright pass sola, mostrando solo los brillos aislados sobre fondo negro."
+/>
+
+## Blur gaussiano separable
+
+El paso crítico a nivel algorítmico es el blur. Un kernel gaussiano 2D de tamaño N×N requiere N² muestras por píxel: coste cuadrático. La gaussiana 2D es matemáticamente separable, se descompone como el producto de dos gaussianas 1D, una horizontal y otra vertical. Aplicar primero un blur horizontal y luego uno vertical da el mismo resultado que el blur 2D directo, con coste O(2N) en lugar de O(N²).
+
+*GPU Pro 2* lo cuantifica para un kernel 9×9: convolución 2D directa cuesta 242 operaciones por píxel; separable, 53. Reducción del 78% para el mismo resultado visual. Cuanto más grande el kernel, más se dispara la diferencia.
+
+Implementé las dos pasadas (horizontal y vertical) reutilizando el mismo shader mediante un uniform `uHorizontal` que actúa como interruptor de dirección. La textura de entrada cambia entre pasadas: `bright_texture` en la 3a, `blur_h_texture` en la 3b. El resultado final queda en `blur_v_texture`.
+
+Además reduje la resolución del blur a 256×256. Bajar resolución en la pasada de blur es técnica estándar de post-procesado: reduce el coste y suaviza más el halo, que es lo que queremos. El bloom no necesita detalle fino, buscamos exactamente lo opuesto.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Comparativa lado a lado: bright pass antes del blur / después del blur horizontal / después del blur vertical."
+/>
+
+## Composición aditiva final
+
+La pasada final recibe dos texturas: la escena original (con iluminación y sombras) y el blur del bloom. La operación es una suma, no una mezcla:
+
+```glsl
+result = clamp(scene + bloom * uBloomIntensity, 0.0, 1.0);
+```
+
+Suma aditiva porque el bloom representa luz extra que se añade sobre la escena, no que la reemplaza. Donde la escena ya era brillante, el bloom también lo es, y la suma hace ese punto más luminoso. Es lo que ocurre físicamente cuando la luz intensa se dispersa en el ojo o la lente. Una mezcla lineal (`mix`) apagaría el resultado: bajaría la luminosidad de las zonas brillantes en lugar de reforzarla.
+
+El uniform `uBloomIntensity` ajusta la fuerza del efecto en tiempo real. `uBloomEnabled` activa o desactiva el bloom con la tecla B para comparar directamente en la misma sesión.
+
+<VisualPlaceholder
+  kind="inline"
+  description="GIF del toggle en acción, alternando bloom on/off sobre la misma escena en tiempo real."
+/>
+
+## Extensiones
+
+Dos añadidos fuera del scope original:
+
+- Carga de un modelo OBJ externo (LPS Head, ~18.000 vértices) mediante `tinyobjloader`, con textura original cargada por `stb_image`.
+- Uniform `uUseTexture` en el fragment shader para conmutar entre material procedural y textura de color, permitiendo mezclar en la misma escena objetos con material clásico (esfera, tetera, torus) y objetos texturizados.
+
+## Links
+
+- Repositorio: [pendiente de hacer público]
+- Referencia: *GPU Pro 2*, Sección 2.3

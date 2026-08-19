@@ -4,10 +4,11 @@ import BaseLayout from './BaseLayout.astro';
 interface Props {
   title: string;
   tagline: string;
+  stack?: string[];
   lang?: 'en' | 'es';
 }
 
-const { title, tagline, lang = 'en' } = Astro.props;
+const { title, tagline, stack = [], lang = 'en' } = Astro.props;
 ---
 
 <BaseLayout title={title} lang={lang}>
@@ -15,7 +16,31 @@ const { title, tagline, lang = 'en' } = Astro.props;
     <header>
       <h1>{title}</h1>
       <p>{tagline}</p>
+      {
+        stack.length > 0 && (
+          <ul class="stack">
+            {stack.map((item) => (
+              <li>{item}</li>
+            ))}
+          </ul>
+        )
+      }
     </header>
     <slot />
   </article>
 </BaseLayout>
+
+<style>
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+  }
+
+  /* Comma-separated, so the separator lives in CSS and never in the content. */
+  .stack li:not(:last-child)::after {
+    content: ', ';
+    white-space: pre;
+  }
+</style>

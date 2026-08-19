@@ -1,0 +1,43 @@
+---
+interface Props {
+  kind: 'hero' | 'inline' | 'gallery';
+  description: string;
+}
+
+const { kind, description } = Astro.props;
+---
+
+<figure class="visual-placeholder" data-kind={kind}>
+  <span class="label">{kind} visual</span>
+  <p class="description">{description}</p>
+</figure>
+
+<style>
+  .visual-placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 2rem 0;
+    padding: 1.5rem;
+    border: 1px dashed currentColor;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+
+  .label {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .description {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* Hero placeholders stand in for a larger asset, so they reserve more room. */
+  .visual-placeholder[data-kind='hero'] {
+    min-height: 16rem;
+    justify-content: center;
+  }
+</style>

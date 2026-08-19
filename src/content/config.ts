@@ -1,10 +1,14 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
+// The default id generator drops the .en / .es infix, which would make
+// bloom.en.mdx and bloom.es.mdx collide on the same id. Keep the filename.
+const generateId = ({ entry }: { entry: string }) => entry.replace(/\.mdx$/, '');
+
 const lang = z.enum(['en', 'es']);
 
 const caseStudies = defineCollection({
-  loader: glob({ base: './src/content/case-studies', pattern: '**/*.mdx' }),
+  loader: glob({ base: './src/content/case-studies', pattern: '**/*.mdx', generateId }),
   schema: z.object({
     title: z.string(),
     tagline: z.string(),
@@ -27,12 +31,12 @@ const galleryEntry = z.object({
 });
 
 const experiments = defineCollection({
-  loader: glob({ base: './src/content/experiments', pattern: '**/*.mdx' }),
+  loader: glob({ base: './src/content/experiments', pattern: '**/*.mdx', generateId }),
   schema: galleryEntry,
 });
 
 const gpuTechniques = defineCollection({
-  loader: glob({ base: './src/content/gpu-techniques', pattern: '**/*.mdx' }),
+  loader: glob({ base: './src/content/gpu-techniques', pattern: '**/*.mdx', generateId }),
   schema: galleryEntry,
 });
 
