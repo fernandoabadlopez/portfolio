@@ -1,6 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import CaseStudyList from '../../../components/CaseStudyList.astro';
 
 const entries = (await getCollection('case-studies', ({ data }) => data.lang === 'es')).sort(
   (a, b) => a.data.order - b.data.order,
@@ -9,14 +10,7 @@ const entries = (await getCollection('case-studies', ({ data }) => data.lang ===
 
 <BaseLayout title="Trabajo" lang="es">
   <h1>Trabajo</h1>
-  <ul>
-    {
-      entries.map((entry) => (
-        <li>
-          <a href={`/es/trabajo/${entry.data.slug}/`}>{entry.data.title}</a>
-          <p>{entry.data.tagline}</p>
-        </li>
-      ))
-    }
-  </ul>
+  <div class="mt-12">
+    <CaseStudyList entries={entries} lang="es" />
+  </div>
 </BaseLayout>

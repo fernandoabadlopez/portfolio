@@ -1,11 +1,13 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import StackList from '../components/StackList.astro';
+import type { Lang } from '../i18n/utils';
 
 interface Props {
   title: string;
   tagline: string;
   stack?: string[];
-  lang?: 'en' | 'es';
+  lang?: Lang;
 }
 
 const { title, tagline, stack = [], lang = 'en' } = Astro.props;
@@ -15,32 +17,42 @@ const { title, tagline, stack = [], lang = 'en' } = Astro.props;
   <article>
     <header>
       <h1>{title}</h1>
-      <p>{tagline}</p>
+      <p class="text-fg-muted mt-4 text-lg">{tagline}</p>
       {
         stack.length > 0 && (
-          <ul class="stack">
-            {stack.map((item) => (
-              <li>{item}</li>
-            ))}
-          </ul>
+          <div class="mt-8">
+            <StackList stack={stack} />
+          </div>
         )
       }
     </header>
-    <slot />
+
+    <hr class="border-border my-12 border-0 border-t" />
+
+    <div class="case-body">
+      <slot />
+    </div>
   </article>
 </BaseLayout>
 
 <style>
-  .stack {
-    display: flex;
-    flex-wrap: wrap;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.75rem;
+  /*
+    Three-column grid: the middle track holds the prose at reading width, the
+    outer tracks are gutters. Content defaults to the prose column; media and
+    code break out across all three so they are not capped at 68ch.
+  */
+  .case-body {
+    display: grid;
+    grid-template-columns: 1fr min(var(--width-prose), 100%) 1fr;
   }
 
-  /* Comma-separated, so the separator lives in CSS and never in the content. */
-  .stack li:not(:last-child)::after {
-    content: ', ';
-    white-space: pre;
+  .case-body > :global(*) {
+    grid-column: 2;
+  }
+
+  .case-body > :global(figure.visual-placeholder),
+  .case-body > :global(pre),
+  .case-body > :global(.full-width) {
+    grid-column: 1 / -1;
   }
 </style>

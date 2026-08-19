@@ -18,6 +18,12 @@ export default defineConfig({
       redirectToDefaultLocale: false,
     },
   },
+  markdown: {
+    // Shiki inlines a themed background and syntax colours on <pre>, which
+    // overrides the neutral code styling in global.css and introduces a
+    // palette. Revisit with a neutral theme once the palette is decided.
+    syntaxHighlight: false,
+  },
   integrations: [mdx(), sitemap()],
   vite: {
     plugins: [tailwindcss()],

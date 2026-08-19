@@ -1,5 +1,20 @@
 ---
-// [PENDING: footer markup]
+import LanguageSwitch from './LanguageSwitch.astro';
+import type { Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const year = new Date().getFullYear();
 ---
 
-<footer></footer>
+<footer class="border-border text-fg-muted mt-24 border-t text-xs">
+  <div
+    class="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-6 px-6 py-8 md:px-12"
+  >
+    <p class="m-0 max-w-none">© {year} Fernando Abad López</p>
+    <LanguageSwitch lang={lang} />
+  </div>
+</footer>

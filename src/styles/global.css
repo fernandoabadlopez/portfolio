@@ -1,82 +1,198 @@
 @import 'tailwindcss';
 
-/* Bare reset. No visual design decisions here yet — the palette and the
-   Technor / Switzer / Geist Mono stack are added in a later pass. */
+/* ---------------------------------------------------------------------------
+   Fonts. Self-hosted WOFF2, see public/fonts/licenses/ for the licences.
+   Technor and Switzer are variable; Geist Mono ships as static cuts.
+--------------------------------------------------------------------------- */
 
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
+@font-face {
+  font-family: 'Technor';
+  src: url('/fonts/Technor-Variable.woff2') format('woff2-variations');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
 }
 
-* {
-  margin: 0;
+@font-face {
+  font-family: 'Switzer';
+  src: url('/fonts/Switzer-Variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
 }
 
-html {
-  -webkit-text-size-adjust: 100%;
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
 
-body {
-  min-height: 100vh;
-  font-family:
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    sans-serif;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #000;
-  background-color: #fafafa;
-  -webkit-font-smoothing: antialiased;
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/GeistMono-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
 }
 
-code,
-kbd,
-pre,
-samp {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 1em;
+/* ---------------------------------------------------------------------------
+   Tokens. Colours are neutral placeholders; the palette is not decided yet.
+--------------------------------------------------------------------------- */
+
+/* Expose the tokens as Tailwind utilities (font-display, text-fg-muted, ...). */
+@theme inline {
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+  --font-mono: var(--font-mono);
+
+  --color-bg: var(--color-bg);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-border: var(--color-border);
+  --color-code-bg: var(--color-code-bg);
+
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
+  --text-4xl: var(--text-4xl);
+  --text-5xl: var(--text-5xl);
+
+  --container-prose: var(--width-prose);
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-size: inherit;
-  font-weight: inherit;
-  text-wrap: balance;
-}
+/* ---------------------------------------------------------------------------
+   Base typography.
+--------------------------------------------------------------------------- */
 
-p {
-  text-wrap: pretty;
-}
+@layer base {
+  :root {
+    --font-display: Technor, system-ui, sans-serif;
+    --font-body: Switzer, system-ui, sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
+    --color-bg: #fafafa;
+    --color-fg: #0a0a0a;
+    --color-fg-muted: #666666;
+    --color-border: #d4d4d4;
+    --color-code-bg: #f0f0f0;
 
-img,
-picture,
-video,
-canvas,
-svg {
-  display: block;
-  max-width: 100%;
-}
+    --text-xs: 0.8rem;
+    --text-sm: 0.9rem;
+    --text-base: 1rem;
+    --text-lg: 1.25rem;
+    --text-xl: 1.563rem;
+    --text-2xl: 1.953rem;
+    --text-3xl: 2.441rem;
+    --text-4xl: 3.052rem;
+    --text-5xl: 3.815rem;
 
-input,
-button,
-textarea,
-select {
-  font: inherit;
-}
+    --width-prose: 68ch;
+  }
 
-ul,
-ol {
-  list-style: none;
-  padding: 0;
+  html {
+    font-family: var(--font-body);
+    font-size: 18px;
+    color: var(--color-fg);
+    background-color: var(--color-bg);
+    line-height: 1.6;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(2rem, 5vw, 3.815rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-block: 0;
+    text-wrap: balance;
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 900;
+    font-size: clamp(1.5rem, 3vw, 2.441rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin-block: 3rem 1rem;
+    text-wrap: balance;
+  }
+
+  h3 {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: var(--text-lg);
+    margin-block: 2rem 0.75rem;
+  }
+
+  p {
+    max-width: var(--width-prose);
+    margin-block: 0 1rem;
+    text-wrap: pretty;
+  }
+
+  ul,
+  ol {
+    max-width: var(--width-prose);
+    padding-left: 1.5rem;
+    margin-block: 0 1rem;
+  }
+
+  li {
+    margin-block: 0.5rem 0;
+  }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    background-color: var(--color-code-bg);
+    padding: 0.15em 0.35em;
+    border-radius: 3px;
+  }
+
+  pre {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    background-color: var(--color-code-bg);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin-block: 1.5rem;
+    border-radius: 4px;
+    max-width: 100%;
+  }
+
+  pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  a {
+    color: var(--color-fg);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  a:hover {
+    text-decoration-thickness: 2px;
+  }
+
+  strong {
+    font-weight: 600;
+  }
+
+  em {
+    font-style: italic;
+  }
 }

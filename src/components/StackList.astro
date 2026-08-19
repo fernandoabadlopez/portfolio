@@ -1,0 +1,21 @@
+---
+interface Props {
+  stack: string[];
+}
+
+const { stack } = Astro.props;
+---
+
+<ul
+  class="stack text-fg-muted m-0 flex max-w-none list-none flex-wrap p-0 font-mono text-xs tracking-[0.05em] uppercase"
+>
+  {stack.map((item) => <li class="m-0">{item}</li>)}
+</ul>
+
+<style>
+  /* Middle-dot separator lives in CSS so it never enters the content. */
+  .stack li:not(:last-child)::after {
+    content: ' · ';
+    white-space: pre;
+  }
+</style>

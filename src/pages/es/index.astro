@@ -1,7 +1,25 @@
 ---
+import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import CaseStudyList from '../../components/CaseStudyList.astro';
+
+const entries = (
+  await getCollection('case-studies', ({ data }) => data.lang === 'es' && data.order <= 3)
+).sort((a, b) => a.data.order - b.data.order);
 ---
 
 <BaseLayout title="Fernando Abad López" lang="es">
-  <h1>Fernando Abad López — Ingeniero de simulación y gráficos 3D en tiempo real.</h1>
+  <section class="flex min-h-[60vh] flex-col justify-center">
+    <h1 class="text-[clamp(2.5rem,6vw,4.5rem)] leading-none">Fernando Abad López</h1>
+    <p class="text-fg-muted mt-6 max-w-[40ch] text-xl">
+      Ingeniero de simulación y gráficos 3D en tiempo real.
+    </p>
+  </section>
+
+  <section>
+    <h2>Trabajo destacado</h2>
+    <div class="mt-8">
+      <CaseStudyList entries={entries} lang="es" />
+    </div>
+  </section>
 </BaseLayout>

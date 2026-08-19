@@ -1,5 +1,36 @@
 ---
-// [PENDING: navigation markup]
+import LanguageSwitch from './LanguageSwitch.astro';
+import { navItems, path, ui, type Lang } from '../i18n/utils';
+
+interface Props {
+  lang: Lang;
+}
+
+const { lang } = Astro.props;
+const labels = ui[lang].nav;
 ---
 
-<nav></nav>
+<header class="border-border bg-bg sticky top-0 z-10 border-b">
+  <nav
+    class="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-6 px-6 py-4 md:px-12"
+  >
+    <a href={path('home', lang)} class="font-display text-lg font-black no-underline">NaN</a>
+
+    <div class="flex items-center gap-6">
+      <ul
+        class="font-body m-0 flex max-w-none list-none gap-6 p-0 text-sm tracking-[0.05em] uppercase"
+      >
+        {
+          navItems.map((key) => (
+            <li class="m-0">
+              <a href={path(key, lang)} class="no-underline hover:underline">
+                {labels[key]}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+      <LanguageSwitch lang={lang} />
+    </div>
+  </nav>
+</header>
