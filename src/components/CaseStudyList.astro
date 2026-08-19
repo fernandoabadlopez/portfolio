@@ -12,17 +12,24 @@ const { entries, lang } = Astro.props;
 const base = path('work', lang);
 ---
 
-<ul class="m-0 flex max-w-none list-none flex-col gap-12 p-0">
+<ul class="m-0 flex max-w-none list-none flex-col gap-16 p-0">
   {
     entries.map((entry) => (
       <li class="m-0">
-        <h2 class="mt-0 mb-2">
-          <a href={`${base}${entry.data.slug}/`} class="no-underline hover:underline">
-            {entry.data.title}
-          </a>
-        </h2>
-        <p class="text-fg-muted mb-4">{entry.data.tagline}</p>
-        <StackList stack={entry.data.stack} />
+        <a
+          href={`${base}${entry.data.slug}/`}
+          class="group grid grid-cols-1 gap-2 no-underline md:grid-cols-[120px_1fr] md:gap-6"
+        >
+          <span class="text-fg-muted font-mono text-xs tracking-[0.1em] uppercase">
+            Fig {String(entry.data.order).padStart(2, '0')}
+          </span>
+
+          <div>
+            <h2 class="mt-0 mb-2 group-hover:underline">{entry.data.title}</h2>
+            <p class="text-fg-muted mb-4">{entry.data.tagline}</p>
+            <StackList stack={entry.data.stack} />
+          </div>
+        </a>
       </li>
     ))
   }

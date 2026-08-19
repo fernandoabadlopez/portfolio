@@ -9,17 +9,22 @@ const entries = (
 ---
 
 <BaseLayout title="Fernando Abad López" lang="es">
-  <section class="flex min-h-[60vh] flex-col justify-center">
+  <section>
+    <p class="text-fg-muted mb-12 font-mono text-xs tracking-[0.1em] uppercase">
+      Fernando Abad López / Portfolio — 2026
+    </p>
+
     <h1 class="text-[clamp(2.5rem,6vw,4.5rem)] leading-none">Fernando Abad López</h1>
-    <p class="text-fg-muted mt-6 max-w-[40ch] text-xl">
+
+    <p class="text-fg-muted mt-4 max-w-[40ch] text-xl">
       Ingeniero de simulación y gráficos 3D en tiempo real.
     </p>
   </section>
 
-  <section>
-    <h2>Trabajo destacado</h2>
-    <div class="mt-8">
-      <CaseStudyList entries={entries} lang="es" />
-    </div>
+  <hr class="border-border mt-16 border-0 border-t" />
+
+  <section class="mt-16">
+    <h2 class="mt-0 mb-16 text-2xl">Trabajo destacado</h2>
+    <CaseStudyList entries={entries} lang="es" />
   </section>
 </BaseLayout>
