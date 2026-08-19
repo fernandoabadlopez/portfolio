@@ -1,0 +1,77 @@
+---
+title: "XPBD vs PBD: real-time cloth simulator"
+tagline: "Position-based cloth simulator with both formulations (classic PBD and XPBD) implemented in parallel and switchable at runtime."
+stack: ["Processing", "Java", "PeasyCam", "P3D"]
+order: 2
+lang: "en"
+slug: "xpbd"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: short looping GIF of experiment 3 (rotating sphere + cloth wrapping around with friction). Ideal duration 5-8s, no audio."
+/>
+
+## Context
+
+Position-based simulation (Position Based Dynamics, PBD) is a family of techniques used in cloth, rope, soft body, and fluid physics engines. Instead of computing forces and accelerating particles, it directly corrects positions to satisfy constraints (two particles at a fixed distance, an angle between three particles, etc.). It's fast, stable, and that's why it powers engines like Havok Cloth, Nvidia PhysX, and Unity Cloth. XPBD is its 2016 evolution that fixes the biggest flaw of the classic formulation: stiffness depending on the solver rather than on the material.
+
+## Overview
+
+Cloth simulator in Processing with a custom particle engine built from scratch, with classic PBD and XPBD coexisting inside the same constraint class. The branching happens only inside the projection step of each constraint, so switching modes at runtime (`Z` for PBD, `X` for XPBD) doesn't change any other simulation variable. That's the condition for the comparison to be honest.
+
+## What PBD gets wrong and XPBD fixes
+
+In classic PBD stiffness is controlled by a parameter `k ∈ [0,1]` with no physical units. The problem: the simulated material doesn't depend on `k` alone, it also depends on how many solver iterations run per frame and on the timestep. Crank up iterations and the cloth stiffens on its own, without touching the material. Müller introduced a well-known correction (`k' = 1 - (1-k)^(1/n)`) to compensate for that dependency, but it saturates fast: once the material is moderately stiff, the formula stops compensating and you're still tied to the solver.
+
+XPBD fixes it by reformulating the constraint as a real physical problem. It introduces the **compliance** parameter (`α`), which is the inverse of stiffness and has physical units (m/N). The projection now includes a term `α̃ = α/dt²` in the denominator, and a `λ` accumulator per constraint that tracks how much force it has applied during the step. The result is that α describes the material and iterations describe convergence quality. Two independent axes. You can crank iterations to converge better to the same material, not to a different one.
+
+In the simulator both branches live inside `Constraint.proyecta_restriccion`. PBD writes `Δx ∝ k' · C`, XPBD writes the extended form with `α̃` and accumulated `λ`. Same code with the branch on the line that computes the displacement magnitude.
+
+<VisualPlaceholder
+  kind="inline"
+  description={"Argumentative comparison GIF: same scene, same material, iterations increased from 2 to 100. In PBD the cloth stiffens progressively. In XPBD it doesn't change. This is the \"click\" moment of the case study."}
+/>
+
+## Implemented constraints
+
+Four constraint types, all compatible with both formulations:
+
+- **Distance constraint** (structural): maintains the rest distance between connected particles. The basic cloth constraint.
+- **Shear constraint**: controls the angle between pairs of connected edges. Analytical gradient `(I - vvᵀ)` on positions.
+- **Triangle bend constraint**: solved as the distance between a vertex and the midpoint of the opposite base, not as a dihedral angle. Simpler and more numerically stable for low-stiffness cloth.
+- **Sphere collision constraint** with Coulomb tangential friction and surface velocity from rotation (`ω × r`). This is what lets the cloth wrap around a rotating sphere instead of just resting on it.
+
+## Solver and simulation loop
+
+Sequential Gauss-Seidel solver. Each constraint writes the position and the next one reads it updated, which accelerates convergence over Jacobi. The solver is configured at 2 iterations per step with `dt = 20 ms` (60 fps), enough for the project's scenes. Both parameters are tunable in `Parameters.pde`.
+
+Integration: standard semi-implicit Euler from PBD. Predict position with current velocity, project all constraints on the prediction, and reconstruct velocity a posteriori as `v = (x - x_prev) / dt`. That last step is what keeps the simulation stable even with very stiff constraints: any aggressive positional correction is automatically turned into the correct velocity.
+
+Collisions solved by brute force O(n·m) against the scene spheres. No self-collision, no grid, no hash. For the particle count the simulator handles (a typical cloth mesh of 400 particles against 1-2 spheres) that's enough.
+
+## Live comparison
+
+`Z` switches to PBD, `X` switches to XPBD. The active mode is drawn on screen alongside framerate, iteration count, and stiffness value. You can switch methods without recompiling, without resetting the scene, seeing the difference immediately on the same configuration.
+
+Five preset scenarios with keys `0`-`4`:
+
+- **0. Original**: cloth hanging from two fixed corners. Base scene to tune stiffness and timestep.
+- **1. Moving ball**: sphere passing horizontally through the cloth.
+- **2. Physical rain**: spheres falling onto the cloth.
+- **3. Rotation and free fall**: sphere rotating below the cloth. Shows surface friction in action, the cloth wraps around the sphere.
+- **4. Manual tension**: `+`/`-` controls to tension and relax the cloth in real time.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Mini gallery with captures of the 5 experiments, side by side."
+/>
+
+## Links
+
+- Repository: [github.com/fernandoabadlopez/xpbd](https://github.com/fernandoabadlopez/xpbd)
+- *Position Based Dynamics*, Müller et al., 2007
+- *XPBD: Position-Based Simulation of Compliant Constrained Dynamics*, Macklin, Müller, Chentanez, 2016
