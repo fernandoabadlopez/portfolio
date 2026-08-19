@@ -9,10 +9,12 @@ Signature: NaN (Not a Number, used as personal mark; do not add taglines around 
 
 - Astro 5.x with MDX
 - Tailwind CSS 4.x
+- @tailwindcss/vite (Tailwind 4 wiring; replaces @astrojs/tailwind)
 - TypeScript strict
 - pnpm as package manager
 - Vercel for hosting
 - Prettier + ESLint minimal config
+- @typescript-eslint/parser (required by astro-eslint-parser for TS in .astro frontmatter)
 - Package name: portfolio
 
 ## Site architecture (fixed)
@@ -44,7 +46,26 @@ Content lives in `src/content/`. Three collections:
 - experiments (5 entries × 2 languages = 10 files)
 - gpu-techniques (4 entries × 2 languages = 8 files)
 
-Each entry is an `.mdx` file with frontmatter including at minimum: title, tagline, stack, order, hero (optional).
+Each entry is an `.mdx` file loaded by the glob loader from `src/content/<collection>/**/*.mdx`.
+The canonical schema lives in `src/content/config.ts`; this section mirrors it.
+
+case-studies frontmatter:
+- title            string
+- tagline          string
+- stack            string[]
+- order            number
+- lang             "en" | "es"
+- slug             string
+- heroPlaceholder  boolean (default true)
+
+experiments and gpu-techniques frontmatter:
+- title            string
+- blurb            string
+- stack            string[]
+- order            number
+- lang             "en" | "es"
+- slug             string
+- gifPlaceholder   boolean (default true)
 
 Case study bodies follow this structure: Context, Overview, then 3-6 technical sections chosen per project, ending in Links.
 

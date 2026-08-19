@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://fernandoabad.dev',
+  trailingSlash: 'always',
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'es'],

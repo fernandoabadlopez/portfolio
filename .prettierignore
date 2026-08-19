@@ -6,3 +6,7 @@ pnpm-lock.yaml
 # Source of truth, authored by the owner. Prettier collapses its column
 # alignment, so it must never be reformatted.
 PROJECT_BRIEF.md
+README.md
+
+# Authored content. Prettier can mangle Markdown tables and code blocks.
+src/content/**/*.mdx
