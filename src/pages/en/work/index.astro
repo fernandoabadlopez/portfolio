@@ -1,16 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
-import BaseLayout from '../../../layouts/BaseLayout.astro';
-import CaseStudyList from '../../../components/CaseStudyList.astro';
-
-const entries = (await getCollection('case-studies', ({ data }) => data.lang === 'en')).sort(
-  (a, b) => a.data.order - b.data.order,
-);
+// The home page is now the work index. Kept so existing links and bookmarks
+// to /en/work/ still resolve.
+return Astro.redirect('/en/');
 ---
-
-<BaseLayout title="Work" lang="en">
-  <h1>Work</h1>
-  <div class="mt-12">
-    <CaseStudyList entries={entries} lang="en" />
-  </div>
-</BaseLayout>

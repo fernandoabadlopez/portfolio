@@ -17,8 +17,11 @@ const paths = {
 
 export type RouteKey = keyof typeof paths;
 
-/** Route keys shown in the nav, in order. */
-export const navItems = ['work', 'experiments', 'gpu', 'about'] as const;
+/**
+ * Route keys shown in the nav, in order. Work is deliberately absent: the home
+ * page is the work index, reachable through the NaN monogram.
+ */
+export const navItems = ['experiments', 'gpu', 'about'] as const;
 
 export function path(key: RouteKey, lang: Lang): string {
   return paths[key][lang];
@@ -45,11 +48,17 @@ export function alternatePath(pathname: string, from: Lang, to: Lang): string {
   return paths.home[to];
 }
 
+/** One segment of the section indicator. Only non-final segments get an href. */
+export interface TrailSegment {
+  label: string;
+  href?: string;
+}
+
 /**
- * Breadcrumb trail for the nav's section indicator, e.g. ['Work', 'bloom'].
+ * Breadcrumb trail for the nav's section indicator, e.g. Work / bloom.
  * Rendered uppercase by CSS. Home has no indicator, so returns null.
  */
-export function sectionTrail(pathname: string, lang: Lang): string[] | null {
+export function sectionTrail(pathname: string, lang: Lang): TrailSegment[] | null {
   if (pathname === paths.home[lang]) return null;
 
   const labels = ui[lang].nav;
@@ -57,11 +66,14 @@ export function sectionTrail(pathname: string, lang: Lang): string[] | null {
 
   if (pathname.startsWith(workBase)) {
     const slug = pathname.slice(workBase.length).replace(/\/$/, '');
-    return slug ? [labels.work, slug] : [labels.work];
+    // The work index redirects home, so the Work segment points straight there.
+    return slug
+      ? [{ label: labels.work, href: paths.home[lang] }, { label: slug }]
+      : [{ label: labels.work }];
   }
 
   for (const key of ['experiments', 'gpu', 'about'] as const) {
-    if (pathname === paths[key][lang]) return [labels[key]];
+    if (pathname === paths[key][lang]) return [{ label: labels[key] }];
   }
 
   return null;

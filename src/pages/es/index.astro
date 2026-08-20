@@ -16,15 +16,16 @@ const entries = (await getCollection('case-studies', ({ data }) => data.lang ===
 
     <h1 class="text-[clamp(2.5rem,6vw,4.5rem)] leading-none">Fernando Abad López</h1>
 
-    <p class="text-fg-muted mt-4 max-w-[40ch] text-xl">
+    <p class="text-fg-muted mt-4 max-w-[60ch] text-xl">
       Ingeniero de simulación y gráficos 3D en tiempo real.
     </p>
   </section>
 
   <hr class="border-border mt-16 border-0 border-t" />
 
-  <section class="mt-16">
-    <h2 class="mt-0 mb-16 text-2xl">Trabajo destacado</h2>
+  <!-- Home is the work index; the list follows the rule directly. The
+       heading's former 4rem gap is preserved as padding-top. -->
+  <section class="mt-16 pt-16">
     <CaseStudyList entries={entries} lang="es" />
   </section>
 </BaseLayout>

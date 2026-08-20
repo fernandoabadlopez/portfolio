@@ -50,7 +50,21 @@ const trail = sectionTrail(pathname, lang);
     trail && (
       <div class="border-border border-b">
         <p class="text-fg-muted mx-auto w-full max-w-[1200px] px-6 py-3 font-mono text-xs tracking-[0.1em] uppercase md:px-12">
-          {trail.join(' / ')}
+          {trail.map((segment, i) => (
+            <>
+              {i > 0 && <span> / </span>}
+              {segment.href ? (
+                <a
+                  href={segment.href}
+                  class="text-fg-muted no-underline underline-offset-[0.2em] hover:underline"
+                >
+                  {segment.label}
+                </a>
+              ) : (
+                segment.label
+              )}
+            </>
+          ))}
         </p>
       </div>
     )
