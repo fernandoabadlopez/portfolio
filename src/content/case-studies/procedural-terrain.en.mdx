@@ -1,0 +1,93 @@
+---
+title: "Dynamic snow system with triplanar shader in Unity"
+tagline: "HLSL shader with triplanar mapping and a reactive snow system: it accumulates by surface orientation, is controlled in real time, and deforms when hit by physical impacts."
+stack: ["Unity", "HLSL", "Shader Graph", "C#"]
+order: 4
+lang: "en"
+slug: "procedural-terrain"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: short looping GIF showing a ball fired at the snow-covered terrain and the reactive deformation. Ideal duration 5-8s, no audio."
+/>
+
+## Context
+
+Triplanar mapping is a texturing technique that solves the classic problem of applying textures to terrains with steep slopes. With normal UVs, the texture stretches on vertical areas because the coordinates are meant for horizontal surfaces. Triplanar projects the texture from three orthogonal directions (X, Y, Z) and blends the results based on the surface normal, eliminating stretching regardless of orientation. It's the foundation of almost any modern game terrain with cliffs or non-flat geometry.
+
+This project implements a full triplanar shader in HLSL from scratch, and on top of it builds a dynamic snow system that reacts to the scene in real time: it accumulates only on upward-facing surfaces, is controlled by the player with two keys, and gets locally pushed in when something hits it.
+
+## Overview
+
+The project started as a classic triplanar shader and grew into a full snow system with three layers of complexity. The first is the pure triplanar, which solves the UV problem. The second is snow accumulation by surface normal, which decides where snow appears. The third is the physical reaction: vertex displacement driven from CPU, with an impact system that deforms the snow wherever any projectile hits.
+
+All critical shader code is HLSL by hand (not Shader Graph), which gives fine control over interpolation, sampling, and displacement. Shader Graph is only used for the wind-driven tree shader and the sea level shader, which are complementary pieces.
+
+## Triplanar mapping
+
+The triplanar shader samples the same texture three times, once per each orthogonal plane (XY, XZ, YZ), using world coordinates as UVs. It then blends the three samples using the surface normal as weight: the axis whose normal component is largest dominates the result.
+
+On a horizontal surface (normal pointing up), the XZ projection dominates and you see the texture from the Y axis. On a vertical cliff (normal pointing sideways), the lateral projection wins and the texture is projected correctly, without stretching. The transition between projections is continuous because the blending uses the squared components of the normal, which gives a smooth weight with no discontinuities.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Side-by-side comparison: same terrain with standard texture (showing stretching on the slope) vs with triplanar (clean across all geometry)."
+/>
+
+## Snow accumulation by surface orientation
+
+Snow doesn't cover the entire terrain uniformly. In reality it accumulates on horizontal surfaces and barely appears on vertical ones. The shader replicates this by using the Y component of the normal as a mask: surfaces with a normal pointing upward receive snow, sideways surfaces don't.
+
+The result is that snow appears on peaks and flatlands, respects cliffs by leaving them with their original rock texture, and creates natural transitions on intermediate slopes. No extra geometry, no manually painted masks.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Capture of the snow-covered terrain showing how vertical walls stay rocky and horizontal surfaces stay snowy."
+/>
+
+## Real-time control from the player
+
+The shader exposes a `_SnowStrenght` parameter that controls how much snow there is in the scene. The `FPSController` in C# adjusts it with the keys `X` (more snow) and `Z` (less), and the change is reflected immediately on the terrain material. `_MaxThickness` is also adjusted, controlling the physical vertex displacement, so raising snow amount doesn't just change color — the actual geometry grows upward.
+
+This is implemented in `SnowVertexDisplacement`, a shader that displaces the terrain mesh vertices upward according to the `_MaxThickness` value, attenuated by the same surface orientation mask. Snow gains physical volume, not just a texture change.
+
+<VisualPlaceholder
+  kind="inline"
+  description="GIF of the terrain with snow varying in real time as X/Z are pressed, showing how the geometry grows and shrinks."
+/>
+
+## Reaction to physical impacts
+
+The most specific part of the system is local deformation on impact. When the player fires a ball with left click (`FPSController.Shoot()`), the ball carries a `BulletBounce` component that detects collision against the terrain. On impact:
+
+1. The exact collision point is obtained with `collision.contacts[0].point`.
+2. The point height is adjusted by adding the current `_MaxThickness`, because snow has volume and the physical collision point sits at the base ground, not at the visible snow surface.
+3. Four parameters are passed to the shader: `_HitPos` (impact position), `_HitTime` (impact time), `_BounceRadius` (affected area radius), and `_BounceStrength` (bounce intensity).
+
+`SnowVertexDisplacement` uses these parameters to modify the local displacement with an elastic bounce: vertices within the impact radius sink and rise back in a damped oscillation, leaving no permanent crater. It's the same effect you see in Fortnite when you shoot at a structure: a brief, visible deformation that recovers. Simplified but effective, without real physics simulation.
+
+The detail of adding `_MaxThickness` to the impact point Y is what makes the deformation feel visually correct. Without that adjustment, with thick snow enabled, bounces would happen below the visible surface.
+
+<VisualPlaceholder
+  kind="inline"
+  description="GIF of the impact system: multiple balls fired in succession, showing how the snow bounces locally where they hit."
+/>
+
+## Complementary exercises
+
+The project includes four other exercises that make up a complete scene system, though the technical anchor is the triplanar shader with snow.
+
+- **Base terrain models** and **eroded models**: two comparative scenes with different generation and erosion algorithms, useful as a geometry base to test the triplanar.
+- **Models with objects**: scene with object instances distributed across the terrain, to validate the full pipeline.
+- **Tree with wind**: shader (this one in Shader Graph) that simulates leaf deformation from wind, using temporal noise.
+
+Everything integrates into a playable scene with a custom FPS controller (`FPSController`, `MouseLookFPS`), where you can move, shoot, and modify the terrain in real time.
+
+## Links
+
+- Repository: pending public release
+- Demo video: pending YouTube link

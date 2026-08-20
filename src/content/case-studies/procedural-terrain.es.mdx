@@ -1,0 +1,93 @@
+---
+title: "Sistema de nieve dinámica con shader triplanar en Unity"
+tagline: "Shader HLSL con mapeo triplanar y sistema de nieve reactiva: se acumula por orientación de superficie, se controla en tiempo real, y se deforma al recibir impactos físicos."
+stack: ["Unity", "HLSL", "Shader Graph", "C#"]
+order: 4
+lang: "es"
+slug: "procedural-terrain"
+heroPlaceholder: true
+---
+
+import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+
+<VisualPlaceholder
+  kind="hero"
+  description="Hero: GIF corto en loop mostrando el disparo de una bola sobre el terreno cubierto de nieve y la deformación reactiva. Duración ideal 5-8s, sin audio."
+/>
+
+## Contexto
+
+El mapeo triplanar es una técnica de texturizado que resuelve el problema clásico de aplicar texturas a terrenos con pendientes pronunciadas. Con UVs normales, la textura se estira en zonas verticales porque las coordenadas están pensadas para superficies horizontales. El triplanar proyecta la textura desde tres direcciones ortogonales (X, Y, Z) y mezcla los resultados según la normal de la superficie, eliminando el estiramiento sin importar la orientación. Es la base de casi cualquier terreno de videojuego moderno con acantilados o geometría no plana.
+
+Este proyecto implementa un shader triplanar completo en HLSL desde cero, y encima construye un sistema de nieve dinámica que reacciona a la escena en tiempo real: se acumula solo en superficies orientadas hacia arriba, se controla desde el jugador con dos teclas, y se hunde localmente cuando algo impacta contra ella.
+
+## Overview
+
+El proyecto empezó como un shader triplanar clásico y creció hasta un sistema completo de nieve con tres capas de complejidad. La primera es el triplanar puro, que resuelve el problema de las UVs. La segunda es la acumulación de nieve por normal, que decide en qué superficies aparece. La tercera es la reacción física: displacement de vértices controlado desde CPU, con un sistema de impactos que deforma la nieve donde impacta cualquier proyectil.
+
+Todo el shader crítico está escrito en HLSL a mano (no Shader Graph), lo que permite control fino sobre la interpolación, el sampling y el displacement. Shader Graph se usa solo para el shader del árbol con viento y para el nivel del mar, que son piezas complementarias.
+
+## Mapeo triplanar
+
+El triplanar samplea la misma textura tres veces, una vez por cada plano ortogonal (XY, XZ, YZ), usando las coordenadas del mundo como UVs. Luego mezcla las tres muestras usando la normal de la superficie como peso: el eje cuya componente de la normal es mayor domina el resultado.
+
+En una superficie horizontal (normal apuntando arriba), la proyección XZ domina y ves la textura desde el eje Y. En un acantilado vertical (normal apuntando lateralmente), la proyección lateral gana y la textura se ve correctamente proyectada, sin estiramiento. La transición entre proyecciones es continua porque el blending usa las componentes al cuadrado de la normal, lo que da un peso suave y sin discontinuidades.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Comparativa lado a lado: mismo terreno con textura estándar (mostrando el estiramiento en la pendiente) vs con triplanar (limpia en toda la geometría)."
+/>
+
+## Acumulación de nieve por orientación de superficie
+
+La nieve no cubre todo el terreno por igual. En la realidad se acumula en superficies horizontales y prácticamente no aparece en superficies verticales. El shader replica esto usando la componente Y de la normal como máscara: superficies con normal apuntando hacia arriba reciben nieve, superficies laterales no.
+
+El resultado es que la nieve aparece en las cimas y llanuras, respeta los acantilados dejándolos con la textura original de roca, y crea transiciones naturales en las pendientes intermedias. Sin geometría adicional, sin pintar manualmente ninguna máscara.
+
+<VisualPlaceholder
+  kind="inline"
+  description="Captura del terreno cubierto de nieve mostrando cómo las paredes verticales quedan de roca y las superficies horizontales de nieve."
+/>
+
+## Control en tiempo real desde el jugador
+
+El shader expone un parámetro `_SnowStrenght` que controla cuánta nieve hay en la escena. Desde el `FPSController` en C# se ajusta con las teclas `X` (más nieve) y `Z` (menos), y el cambio se refleja inmediatamente en el material del terreno. También se ajusta `_MaxThickness`, que controla el desplazamiento físico de los vértices, así que subir la cantidad de nieve no solo cambia el color, sino que la geometría real crece hacia arriba.
+
+Esto se implementa con `SnowVertexDisplacement`, un shader que desplaza los vértices de la malla del terreno hacia arriba según el valor de `_MaxThickness`, atenuado por la misma máscara de orientación de superficie. La nieve gana volumen físico, no es solo un cambio de textura.
+
+<VisualPlaceholder
+  kind="inline"
+  description="GIF del terreno con nieve variando en tiempo real al pulsar X/Z, mostrando cómo la geometría crece y decrece."
+/>
+
+## Reacción a impactos físicos
+
+La parte más específica del sistema es la deformación local por impacto. Cuando el jugador dispara una pelota con clic izquierdo (`FPSController.Shoot()`), la pelota lleva un componente `BulletBounce` que detecta la colisión contra el terreno. En el momento del impacto:
+
+1. Se obtiene el punto exacto de la colisión con `collision.contacts[0].point`.
+2. Se ajusta la altura del punto sumándole el `_MaxThickness` actual, porque la nieve tiene volumen y el punto de colisión física está en el suelo base, no en la superficie visible de la nieve.
+3. Se pasan al shader cuatro parámetros: `_HitPos` (posición del impacto), `_HitTime` (tiempo del impacto), `_BounceRadius` (radio del área afectada) y `_BounceStrength` (intensidad del rebote).
+
+El shader `SnowVertexDisplacement` usa estos parámetros para modificar el displacement local con un rebote elástico: los vértices dentro del radio del impacto se hunden y vuelven a subir en una oscilación amortiguada, no dejan cráter permanente. Es el mismo efecto que ves en Fortnite cuando disparas contra una estructura: una deformación breve y visible que se recupera. Simplificado pero efectivo, sin necesidad de simulación física real.
+
+El detalle de sumar `_MaxThickness` a la Y del punto de impacto es lo que hace que la deformación se sienta correcta visualmente. Sin ese ajuste, con la nieve gruesa activada, los rebotes ocurrirían por debajo de la superficie visible.
+
+<VisualPlaceholder
+  kind="inline"
+  description="GIF del sistema de impactos: varias pelotas disparadas seguidas mostrando cómo la nieve rebota localmente donde impactan."
+/>
+
+## Ejercicios complementarios
+
+El proyecto incluye otros cuatro ejercicios que funcionan como sistema de escena completo, aunque el ancla técnica es el shader triplanar con nieve.
+
+- **Modelos de terrenos base** y **modelos erosionados**: dos escenas comparativas con distintos algoritmos de generación y erosión, útiles como base geométrica para probar el triplanar.
+- **Modelos con objetos**: escena con instancias de objetos distribuidos por el terreno, para validar el pipeline completo.
+- **Árbol con viento**: shader (esta vez en Shader Graph) que simula deformación de las hojas por viento, usando ruido temporal.
+
+Todo se integra en una escena jugable con controlador FPS propio (`FPSController`, `MouseLookFPS`), en la que puedes moverte, disparar y modificar el terreno en tiempo real.
+
+## Links
+
+- Repositorio: pendiente de hacer público
+- Vídeo de demostración: pendiente enlace YouTube
