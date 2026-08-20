@@ -1,5 +1,6 @@
 ---
 interface Props {
+  /** Drives the box aspect ratio: 16:9 for hero, 4:3 for inline and gallery. */
   kind: 'hero' | 'inline' | 'gallery';
   description: string;
 }
@@ -11,11 +12,8 @@ const { kind, description } = Astro.props;
   <span class="fig-label text-fg-muted block font-mono text-xs tracking-[0.1em] uppercase"></span>
 
   <div
-    class="fig-box border-border relative flex items-center justify-center border border-dashed bg-transparent p-8"
+    class="fig-box border-border flex items-center justify-center border border-dashed bg-transparent p-8"
   >
-    <span class="text-fg-muted absolute top-4 left-4 font-mono text-xs tracking-[0.1em] uppercase">
-      {kind} visual
-    </span>
     <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
       {description}
     </p>
