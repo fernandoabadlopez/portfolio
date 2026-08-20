@@ -3,9 +3,9 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import CaseStudyList from '../../components/CaseStudyList.astro';
 
-const entries = (
-  await getCollection('case-studies', ({ data }) => data.lang === 'es' && data.order <= 3)
-).sort((a, b) => a.data.order - b.data.order);
+const entries = (await getCollection('case-studies', ({ data }) => data.lang === 'es')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
 ---
 
 <BaseLayout title="Fernando Abad López" lang="es">
