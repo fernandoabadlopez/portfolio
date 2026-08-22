@@ -3,20 +3,74 @@ interface Props {
   /** Drives the box aspect ratio: 16:9 for hero, 4:3 for inline and gallery. */
   kind: 'hero' | 'inline' | 'gallery';
   description: string;
+  /** Path to a real asset. Omit to render the pending-asset placeholder. */
+  src?: string;
 }
 
-const { kind, description } = Astro.props;
+const { kind, description, src } = Astro.props;
+
+const VIDEO_EXTENSIONS = ['.mp4', '.webm'];
+const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif'];
+
+type Media = 'video' | 'image' | 'unsupported' | null;
+
+function mediaType(path: string | undefined): Media {
+  if (!path) return null;
+  const clean = path.split(/[?#]/)[0].toLowerCase();
+  const extension = clean.slice(clean.lastIndexOf('.'));
+  if (VIDEO_EXTENSIONS.includes(extension)) return 'video';
+  if (IMAGE_EXTENSIONS.includes(extension)) return 'image';
+  return 'unsupported';
+}
+
+const media = mediaType(src);
+
+if (media === 'unsupported') {
+  console.warn(`VisualPlaceholder received unsupported extension for src: ${src}`);
+}
+
+// An unsupported extension falls back to the placeholder.
+const hasAsset = media === 'video' || media === 'image';
 ---
 
 <figure class="visual-placeholder my-12" data-kind={kind}>
   <span class="fig-label text-fg-muted block font-mono text-xs tracking-[0.1em] uppercase"></span>
 
   <div
-    class="fig-box border-border flex items-center justify-center border border-dashed bg-transparent p-8"
+    class:list={[
+      'fig-box',
+      hasAsset
+        ? 'overflow-hidden'
+        : 'border-border flex items-center justify-center border border-dashed bg-transparent p-8',
+    ]}
   >
-    <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
-      {description}
-    </p>
+    {
+      media === 'video' && (
+        <video
+          class="h-full w-full object-cover"
+          src={src}
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="metadata"
+        />
+      )
+    }
+
+    {
+      media === 'image' && (
+        <img class="h-full w-full object-cover" src={src} alt={description} loading="lazy" />
+      )
+    }
+
+    {
+      !hasAsset && (
+        <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
+          {description}
+        </p>
+      )
+    }
   </div>
 </figure>
 
