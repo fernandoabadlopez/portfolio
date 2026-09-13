@@ -1,4 +1,6 @@
 ---
+import { mediaType } from '../lib/media';
+
 interface Props {
   /** Drives the box aspect ratio: 16:9 for hero, 4:3 for inline and gallery. */
   kind: 'hero' | 'inline' | 'gallery';
@@ -8,20 +10,6 @@ interface Props {
 }
 
 const { kind, description, src } = Astro.props;
-
-const VIDEO_EXTENSIONS = ['.mp4', '.webm'];
-const IMAGE_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif'];
-
-type Media = 'video' | 'image' | 'unsupported' | null;
-
-function mediaType(path: string | undefined): Media {
-  if (!path) return null;
-  const clean = path.split(/[?#]/)[0].toLowerCase();
-  const extension = clean.slice(clean.lastIndexOf('.'));
-  if (VIDEO_EXTENSIONS.includes(extension)) return 'video';
-  if (IMAGE_EXTENSIONS.includes(extension)) return 'image';
-  return 'unsupported';
-}
 
 const media = mediaType(src);
 

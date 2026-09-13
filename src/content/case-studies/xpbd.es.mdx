@@ -1,6 +1,6 @@
 ---
 title: "XPBD vs PBD: simulador de tela en tiempo real"
-tagline: "Simulador de tela basado en posiciones con las dos formulaciones (PBD clásico y XPBD) implementadas en paralelo y conmutables en tiempo de ejecución."
+tagline: "Simulador de tela construido sobre PBD y evolucionado a XPBD, desacoplando la rigidez del material de las iteraciones del solver."
 stack: ["Processing", "Java", "PeasyCam", "P3D"]
 order: 2
 lang: "es"
@@ -9,6 +9,7 @@ heroPlaceholder: true
 ---
 
 import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+import VisualPlaceholderPair from '../../components/VisualPlaceholderPair.astro';
 
 <VisualPlaceholder
   kind="hero"
@@ -18,57 +19,52 @@ import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
 
 ## Contexto
 
-La simulación basada en posiciones (Position Based Dynamics, PBD) es una familia de técnicas usadas en motores de física de tela, cuerdas, cuerpos blandos y fluidos. En lugar de calcular fuerzas y acelerar partículas, corrige directamente las posiciones para que cumplan restricciones (dos partículas separadas por una distancia fija, un ángulo entre tres partículas, etc.). Es rápida, estable, y por eso está en motores como Havok Cloth, Nvidia PhysX y Unity Cloth. XPBD es su evolución (2016) que resuelve el defecto más grande de la formulación clásica: que la rigidez depende del solver, no del material.
+La simulación basada en posiciones (PBD) es una familia de técnicas usadas en motores de física de tela, cuerdas, cuerpos blandos y fluidos. En lugar de calcular fuerzas y acelerar partículas, corrige directamente las posiciones para que cumplan restricciones. Es rápida y estable, y por eso está en motores como Havok Cloth, Nvidia PhysX y Unity Cloth.
+
+Este proyecto es un simulador de tela construido desde cero sobre PBD, que evolucioné hacia XPBD (2016) al toparme con la limitación más conocida de la formulación clásica: la rigidez del material depende del solver, no solo de sus parámetros.
 
 ## Overview
 
-Simulador de tela en Processing con motor de partículas propio, escrito desde cero, con PBD clásico y XPBD conviviendo en la misma clase de restricción. La bifurcación ocurre solo dentro de la proyección de cada constraint, así que al conmutar entre modos en runtime (`Z` para PBD, `X` para XPBD) no cambia ninguna otra variable de la simulación. Esa es la condición para que la comparativa sea honesta.
+Empecé implementando un motor de partículas propio en Processing con las restricciones clásicas de PBD: distancia, shear, flexión y colisión con esferas. Funcionaba, pero la rigidez del paño cambiaba según cuántas iteraciones del solver ejecutara por frame — subir iteraciones para estabilizar la simulación endurecía la tela sin haber tocado ningún parámetro de material. Ese acoplamiento es el problema estructural de PBD.
 
-## El problema de PBD y qué arregla XPBD
+Reescribí la proyección de restricciones usando la formulación XPBD, que introduce un parámetro de compliance con unidades físicas reales, desacoplando la rigidez del material del número de iteraciones. El resto del sistema — constraints, solver, integración — se mantuvo, pero ahora responde de forma predecible.
 
-En PBD clásico la rigidez se controla con un parámetro `k ∈ [0,1]` sin unidades físicas. El problema es que el material simulado no depende solo de `k`: depende también de cuántas iteraciones ejecute el solver por frame y del timestep. Si subes iteraciones, la tela se endurece sola sin haber tocado el material. Müller introdujo una corrección famosa (`k' = 1 - (1-k)^(1/n)`) para compensar esa dependencia, pero satura rápidamente: en cuanto el material es medianamente rígido, la fórmula deja de compensar y sigues atado al solver.
+## De PBD a XPBD: qué cambié
 
-XPBD lo resuelve reformulando la restricción como un problema físico real. Introduce el parámetro **compliance** (`α`), que es el inverso de la rigidez y tiene unidades físicas (m/N). En la proyección aparece un término `α̃ = α/dt²` en el denominador, y se acumula un `λ` por restricción que recuerda cuánta fuerza lleva aplicada en ese paso. El resultado es que α describe el material y las iteraciones describen la calidad de la convergencia. Son dos ejes independientes. Puedes subir iteraciones para converger mejor al mismo material, no a uno distinto.
+En PBD clásico la rigidez se controla con un parámetro `k ∈ [0,1]` sin unidades físicas, y el material simulado depende también de las iteraciones del solver y del timestep. La corrección de Müller (`k' = 1 - (1-k)^(1/n)`) compensa esto parcialmente, pero satura rápido: con materiales medianamente rígidos deja de funcionar y el problema vuelve.
 
-En el simulador ambas ramas conviven dentro de `Constraint.proyecta_restriccion`. PBD escribe `Δx ∝ k' · C`, XPBD escribe la forma extendida con `α̃` y `λ` acumulado. Es literalmente el mismo código con la bifurcación en la línea donde se calcula la magnitud del desplazamiento.
+XPBD resuelve esto reformulando la restricción como un problema físico real. Introduce el parámetro compliance (`α`), inverso de la rigidez y con unidades físicas (m/N). La proyección incorpora `α̃ = α/dt²` y un acumulador `λ` por restricción que registra la fuerza aplicada durante el paso. El resultado: `α` describe el material, las iteraciones describen la calidad de la convergencia — son ejes independientes.
 
-<VisualPlaceholder
-  kind="inline"
-  description={"GIF comparativo argumental: misma escena, mismo material, subiendo iteraciones de 2 a 100. En PBD la tela se endurece progresivamente. En XPBD no cambia. Este es el \"click\" del case study."}
-/>
+Implementé ambas formulaciones dentro de la misma clase `Constraint`, lo que me permitió comparar directamente el comportamiento y confirmar que XPBD elimina el acoplamiento. La versión final del simulador usa XPBD en todas las restricciones.
 
 ## Restricciones implementadas
 
-Cuatro tipos de constraint, todas compatibles con las dos formulaciones:
+Cuatro tipos de constraint: distancia (estructural), shear (ángulo entre aristas, gradiente analítico `(I - vvᵀ)`), flexión por triángulo (distancia vértice–punto medio de la base opuesta, más estable numéricamente que un ángulo diedro), y colisión con esfera con fricción tangencial de Coulomb y velocidad de superficie por rotación (`ω × r`).
 
-- **Distance constraint** (estructural): mantiene la distancia de reposo entre partículas conectadas. Es la restricción básica de tela.
-- **Shear constraint**: controla el ángulo entre pares de aristas conectadas. Gradiente analítico `(I - vvᵀ)` sobre las posiciones.
-- **Triangle bend constraint**: resuelto como distancia entre un vértice y el punto medio de la base opuesta, no como ángulo diedro. Formulación más simple y estable numéricamente para telas de baja rigidez.
-- **Sphere collision constraint** con fricción tangencial de Coulomb y velocidad de superficie por rotación (`ω × r`). Es lo que permite que la tela se enrolle sobre una esfera que gira, no solo que se apoye.
+## Solver e integración
 
-## Solver y bucle de simulación
+Solver Gauss-Seidel secuencial, 2 iteraciones por paso, `dt = 20 ms` (60 fps). Integración semi-implícita de Euler: predicción de posición, proyección de restricciones, reconstrucción de velocidad como `v = (x - x_prev) / dt`. Colisiones resueltas por fuerza bruta O(n·m) contra las esferas de la escena.
 
-Solver Gauss-Seidel secuencial. Cada restricción escribe la posición y la siguiente ya la lee actualizada, lo que acelera la convergencia frente a Jacobi. El solver está configurado a 2 iteraciones por paso con `dt = 20 ms` (60 fps), suficiente para las escenas del proyecto. Ambos parámetros son ajustables en `Parameters.pde`.
+## Estabilidad bajo tensión: apertura de esquinas
 
-Integración: Euler semi-implícito estándar de PBD. Predicción de posición con la velocidad actual, proyección de todas las restricciones sobre la predicción, y reconstrucción de velocidad a posteriori como `v = (x - x_prev) / dt`. Ese último paso es lo que hace la simulación estable incluso con restricciones muy rígidas: cualquier corrección posicional agresiva se convierte automáticamente en la velocidad correcta.
+Para validar que las restricciones no colapsan bajo tensión fuerte, sometí un paño a la apertura simultánea de sus cuatro esquinas. La malla mantiene estabilidad numérica sin oscilación durante todo el movimiento.
 
-Colisiones resueltas por fuerza bruta O(n·m) contra las esferas de la escena. No hay self-collision, no hay grid, no hay hash. Para el número de partículas que maneja el simulador (una malla de tela típica de 400 partículas contra 1-2 esferas) es suficiente.
+<VisualPlaceholderPair
+  kind="inline"
+  srcA="/assets/xpbd/corners-wide.mp4"
+  srcB="/assets/xpbd/corners-close.mp4"
+  descriptionA="Plano general: apertura simultánea de las cuatro esquinas de la tela."
+  descriptionB="Mismo experimento, plano cercano."
+/>
 
-## Comparativa en vivo
+## Interacción con colisión: esfera sobre tela colgante
 
-`Z` activa PBD, `X` activa XPBD. El modo activo se pinta en pantalla junto al framerate, número de iteraciones y valor de rigidez. Puedes cambiar de método sin recompilar, sin resetear la escena, viendo la diferencia inmediata sobre la misma configuración.
-
-Cinco escenarios preconfigurados con las teclas `0`-`4`:
-
-- **0. Original**: tela colgada de dos esquinas fijas. Escena base para tarar rigidez y timestep.
-- **1. Pelota móvil**: esfera atravesando la tela horizontalmente.
-- **2. Lluvia física**: caída libre de esferas sobre la tela.
-- **3. Rotación y caída libre**: esfera rotando bajo la tela. Muestra la fricción de superficie en acción, la tela se enrolla en la esfera.
-- **4. Tensión manual**: control con `+`/`-` para tensar y destensar la tela en vivo.
+Con dos esquinas superiores fijas, una esfera se desplaza en línea recta atravesando el paño, ejercitando la restricción de colisión esfera-tela con fricción tangencial descrita arriba.
 
 <VisualPlaceholder
   kind="inline"
-  description="Mini-galería con capturas de los 5 experimentos, uno al lado del otro."
+  src="/assets/xpbd/sphere-drape.mp4"
+  description="Esfera atravesando una tela con las dos esquinas superiores fijas, mostrando la respuesta de colisión y fricción."
 />
 
 ## Links

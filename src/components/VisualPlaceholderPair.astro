@@ -1,0 +1,99 @@
+---
+import { mediaType } from '../lib/media';
+
+interface Props {
+  /** Drives each box's aspect ratio: 16:9 for hero, 4:3 for inline and gallery. */
+  kind?: 'hero' | 'inline' | 'gallery';
+  descriptionA: string;
+  descriptionB: string;
+  /** Path to a real asset for each side. Omit either to render its placeholder. */
+  srcA?: string;
+  srcB?: string;
+}
+
+const { kind = 'inline', descriptionA, descriptionB, srcA, srcB } = Astro.props;
+
+function resolve(src: string | undefined, description: string) {
+  const media = mediaType(src);
+
+  if (media === 'unsupported') {
+    console.warn(`VisualPlaceholderPair received unsupported extension for src: ${src}`);
+  }
+
+  return { media, hasAsset: media === 'video' || media === 'image', src, description };
+}
+
+const boxes = [resolve(srcA, descriptionA), resolve(srcB, descriptionB)];
+---
+
+<figure class="visual-placeholder-pair my-12" data-kind={kind}>
+  <span class="fig-label text-fg-muted block font-mono text-xs tracking-[0.1em] uppercase"></span>
+
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+    {
+      boxes.map((box) => (
+        <div
+          class:list={[
+            'fig-box',
+            box.hasAsset
+              ? 'overflow-hidden'
+              : 'border-border flex items-center justify-center border border-dashed bg-transparent p-8',
+          ]}
+        >
+          {box.media === 'video' && (
+            <video
+              class="h-full w-full object-cover"
+              src={box.src}
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="metadata"
+            />
+          )}
+
+          {box.media === 'image' && (
+            <img
+              class="h-full w-full object-cover"
+              src={box.src}
+              alt={box.description}
+              loading="lazy"
+            />
+          )}
+
+          {!box.hasAsset && (
+            <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
+              {box.description}
+            </p>
+          )}
+        </div>
+      ))
+    }
+  </div>
+</figure>
+
+<style>
+  .visual-placeholder-pair {
+    margin-inline: 0;
+    /* Counts as a single figure: two angles of the same experiment share one
+       FIG label. Counter is seeded by .case-body — see CaseStudyLayout.astro. */
+    counter-increment: fig-minor;
+  }
+
+  .fig-label {
+    margin-bottom: 0.75rem;
+  }
+
+  .fig-label::before {
+    content: 'FIG ' counter(fig-major) '.' counter(fig-minor);
+  }
+
+  .visual-placeholder-pair[data-kind='hero'] .fig-box {
+    aspect-ratio: 16 / 9;
+  }
+
+  .visual-placeholder-pair[data-kind='inline'] .fig-box,
+  .visual-placeholder-pair[data-kind='gallery'] .fig-box {
+    aspect-ratio: 4 / 3;
+  }
+</style>
