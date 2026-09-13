@@ -2,7 +2,7 @@
 
 Personal technical portfolio. Positioning: real-time simulation and 3D graphics engineer.
 
-Domain: fernandoabad.dev
+Domain: nandoabad.dev
 Signature: NaN (Not a Number, used as personal mark; do not add taglines around it)
 
 ## Stack decisions (fixed, do not question)
