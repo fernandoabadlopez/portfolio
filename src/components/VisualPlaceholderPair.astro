@@ -1,5 +1,5 @@
 ---
-import { mediaType } from '../lib/media';
+import { assetExists, mediaType } from '../lib/media';
 import { ui } from '../i18n/utils';
 
 interface Props {
@@ -10,9 +10,18 @@ interface Props {
   /** Path to a real asset for each side. Omit either to render its placeholder. */
   srcA?: string;
   srcB?: string;
+  /** `contain` keeps interface captures whole instead of cropping them. */
+  fit?: 'cover' | 'contain';
 }
 
-const { kind = 'inline', descriptionA, descriptionB, srcA, srcB } = Astro.props;
+const {
+  kind = 'inline',
+  descriptionA,
+  descriptionB,
+  srcA,
+  srcB,
+  fit = 'cover',
+} = Astro.props;
 const lang = Astro.url.pathname.startsWith('/es/') ? 'es' : 'en';
 
 function resolve(src: string | undefined, description: string) {
@@ -22,7 +31,14 @@ function resolve(src: string | undefined, description: string) {
     console.warn(`VisualPlaceholderPair received unsupported extension for src: ${src}`);
   }
 
-  return { media, hasAsset: media === 'video' || media === 'image', src, description };
+  const isMedia = media === 'video' || media === 'image';
+  const hasAsset = isMedia && assetExists(src);
+
+  if (isMedia && !hasAsset) {
+    console.warn(`VisualPlaceholderPair: ${src} is not in public/ yet, rendering placeholder`);
+  }
+
+  return { media, hasAsset, src, description };
 }
 
 const boxes = [resolve(srcA, descriptionA), resolve(srcB, descriptionB)];
@@ -40,8 +56,8 @@ const pending = boxes.some((box) => !box.hasAsset);
   <div class="fig-pair">
     {
       boxes.map((box) => (
-        <div class:list={['fig-box', !box.hasAsset && 'is-pending']}>
-          {box.media === 'video' && (
+        <div class:list={['fig-box', !box.hasAsset && 'is-pending']} data-fit={fit}>
+          {box.hasAsset && box.media === 'video' && (
             <video
               src={box.src}
               autoplay
@@ -53,7 +69,9 @@ const pending = boxes.some((box) => !box.hasAsset);
             />
           )}
 
-          {box.media === 'image' && <img src={box.src} alt={box.description} loading="lazy" />}
+          {box.hasAsset && box.media === 'image' && (
+            <img src={box.src} alt={box.description} loading="lazy" />
+          )}
 
           {!box.hasAsset && <p>{box.description}</p>}
         </div>

@@ -1111,6 +1111,11 @@
     object-fit: cover;
   }
 
+  .fig-box[data-fit='contain'] video,
+  .fig-box[data-fit='contain'] img {
+    object-fit: contain;
+  }
+
   /* Uncooked: a hatched node body carrying the asset description. */
   .fig-box.is-pending {
     display: grid;

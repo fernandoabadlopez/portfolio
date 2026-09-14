@@ -1,5 +1,5 @@
 ---
-import { mediaType } from '../lib/media';
+import { assetExists, mediaType } from '../lib/media';
 import { ui } from '../i18n/utils';
 
 interface Props {
@@ -8,9 +8,11 @@ interface Props {
   description: string;
   /** Path to a real asset. Omit to render the pending-asset placeholder. */
   src?: string;
+  /** `contain` keeps interface captures whole instead of cropping them. */
+  fit?: 'cover' | 'contain';
 }
 
-const { kind, description, src } = Astro.props;
+const { kind, description, src, fit = 'cover' } = Astro.props;
 const lang = Astro.url.pathname.startsWith('/es/') ? 'es' : 'en';
 
 const media = mediaType(src);
@@ -19,8 +21,14 @@ if (media === 'unsupported') {
   console.warn(`VisualPlaceholder received unsupported extension for src: ${src}`);
 }
 
-// An unsupported extension falls back to the placeholder.
-const hasAsset = media === 'video' || media === 'image';
+// A declared asset that is not in public/ yet renders the pending placeholder,
+// so figures can be wired before their files are recorded.
+const isMedia = media === 'video' || media === 'image';
+const hasAsset = isMedia && assetExists(src);
+
+if (isMedia && !hasAsset) {
+  console.warn(`VisualPlaceholder: ${src} is not in public/ yet, rendering placeholder`);
+}
 ---
 
 <figure class="visual-placeholder figure" data-kind={kind}>
@@ -29,14 +37,14 @@ const hasAsset = media === 'video' || media === 'image';
     {!hasAsset && <span class="fig-state">{ui[lang].caseStudy.pending}</span>}
   </figcaption>
 
-  <div class:list={['fig-box', !hasAsset && 'is-pending']}>
+  <div class:list={['fig-box', !hasAsset && 'is-pending']} data-fit={fit}>
     {
-      media === 'video' && (
+      hasAsset && media === 'video' && (
         <video src={src} autoplay muted loop playsinline preload="metadata" data-autopause />
       )
     }
 
-    {media === 'image' && <img src={src} alt={description} loading="lazy" />}
+    {hasAsset && media === 'image' && <img src={src} alt={description} loading="lazy" />}
 
     {!hasAsset && <p>{description}</p>}
   </div>

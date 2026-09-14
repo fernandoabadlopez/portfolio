@@ -43,7 +43,8 @@ Full CPU-to-GPU range: he works across everything between CPU-side physics simul
 
 ## Evidence on Hand
 
-- Case studies (EN + ES): bloom, xpbd, ik-validation, procedural-terrain in `src/content/case-studies/`. Grid-collision is planned but absent.
+- Case studies (EN + ES): bloom, xpbd, ik-validation, procedural-terrain in `src/content/case-studies/`. Grid-collision is planned but absent. Procedural-terrain covers the whole Unity terrain project: editor tool (Midpoint, Diamond-Square, hybrid multifractal FBM), thermal erosion, object spawning, triplanar and snow shaders with impact bounce, and the water shader.
+- Figures can be wired to `/assets/<slug>/...` paths before the files exist; they render as pending until the file is in `public/`.
 - Real media: five XPBD cloth simulation videos in `public/assets/xpbd/` (hero, corners-wide, corners-close, sphere-drape, center-bounce).
 - About page text and contact links (email, GitHub, LinkedIn) in `src/pages/en/about/` and `src/pages/es/sobre-mi/`.
 - Absent, must not be fabricated: media for bloom, ik-validation and procedural-terrain (placeholders); experiments and GPU gallery entries; testimonials, employers, metrics.

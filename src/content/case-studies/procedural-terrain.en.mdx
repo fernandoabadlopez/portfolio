@@ -1,7 +1,7 @@
 ---
-title: "Dynamic snow system with triplanar shader in Unity"
-tagline: "HLSL shader with triplanar mapping and a reactive snow system: it accumulates by surface orientation, is controlled in real time, and deforms when hit by physical impacts."
-stack: ["Unity", "HLSL", "Shader Graph", "C#"]
+title: "Procedural terrain generation in Unity"
+tagline: "Editor tool that generates terrains with Midpoint Displacement, Diamond-Square and fractal noise, erodes and populates them, and renders them with triplanar, reactive snow and water shaders."
+stack: ["Unity", "C#", "HLSL", "Shader Graph"]
 order: 4
 lang: "en"
 slug: "procedural-terrain"
@@ -9,33 +9,108 @@ heroPlaceholder: true
 ---
 
 import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
+import VisualPlaceholderPair from '../../components/VisualPlaceholderPair.astro';
 
 <VisualPlaceholder
   kind="hero"
-  description="Hero: short looping GIF showing a ball fired at the snow-covered terrain and the reactive deformation. Ideal duration 5-8s, no audio."
+  src="/assets/procedural-terrain/hero.mp4"
+  description="Generating a terrain from scratch with the editor tool: hybrid multifractal FBM, thermal erosion and object spawning, ending on the shaded scene."
 />
 
 ## Context
 
-Triplanar mapping is a texturing technique that solves the classic problem of applying textures to terrains with steep slopes. With normal UVs, the texture stretches on vertical areas because the coordinates are meant for horizontal surfaces. Triplanar projects the texture from three orthogonal directions (X, Y, Z) and blends the results based on the surface normal, eliminating stretching regardless of orientation. It's the foundation of almost any modern game terrain with cliffs or non-flat geometry.
+Procedural terrain generation builds a landscape from an algorithm instead of sculpting it by hand. A heightmap is filled by a subdivision or noise function, reshaped by simulated erosion, and then dressed with objects and materials. Changing a seed or a parameter produces a new terrain in seconds, which is why these techniques sit under most open-world and simulation pipelines.
 
-This project implements a full triplanar shader in HLSL from scratch, and on top of it builds a dynamic snow system that reacts to the scene in real time: it accumulates only on upward-facing surfaces, is controlled by the player with two keys, and gets locally pushed in when something hits it.
+This project covers that whole chain inside Unity: a custom editor tool that generates, erodes and populates terrains, and a set of shaders that render them with triplanar texturing, snow that reacts to the scene, and animated water. Everything runs in a playable scene where the terrain can be explored and hit.
 
 ## Overview
 
-The project started as a classic triplanar shader and grew into a full snow system with three layers of complexity. The first is the pure triplanar, which solves the UV problem. The second is snow accumulation by surface normal, which decides where snow appears. The third is the physical reaction: vertex displacement driven from CPU, with an impact system that deforms the snow wherever any projectile hits.
+The project is organised as a pipeline of five stages:
 
-All critical shader code is HLSL by hand (not Shader Graph), which gives fine control over interpolation, sampling, and displacement. Shader Graph is only used for the wind-driven tree shader and the sea level shader, which are complementary pieces.
+1. **Generate** a heightmap with Midpoint Displacement, Diamond-Square or fractal Brownian motion.
+2. **Erode** it with thermal erosion.
+3. **Populate** it with object instances.
+4. **Shade** it with triplanar mapping, orientation-based snow and a water surface.
+5. **Interact** with it from a first-person controller that changes the amount of snow and fires projectiles at it.
+
+Generation, erosion and spawning live in one editor tool in the Unity inspector. The terrain shaders are hand-written HLSL inside Custom Function nodes (`TriplanarMapping`, `TriplanarSnowBlend`, `SnowVertexDisplacement`) wired together in Shader Graph, while the water is built entirely from Shader Graph nodes.
+
+## The terrain editor tool
+
+All generation happens from a single inspector panel. A global block sets the parameters shared by the subdivision algorithms: the number of divisions `N`, the noise amplitude `A`, the amplitude falloff `H` and a random seed. Below it, each technique has its own section with a target `Terrain` and a button that regenerates it, so the algorithms can be compared side by side on separate terrains.
+
+<VisualPlaceholder
+  kind="inline"
+  fit="contain"
+  src="/assets/procedural-terrain/addon-inspector.png"
+  description="The editor tool in the Unity inspector: global configuration, Midpoint, Diamond-Square, fractal Brownian motion, thermal erosion and object spawning."
+/>
+
+## Midpoint Displacement and Diamond-Square
+
+Both algorithms build the heightmap by recursive subdivision. They start from the corners of the grid, fill in new points from the average of their neighbours plus a random offset, and repeat on ever smaller cells. `N` sets how many subdivision levels run, `A` sets the size of the first offsets, and `H` reduces that amplitude at every level, which decides how rough or smooth the result looks.
+
+Midpoint Displacement fills the midpoints along the edges of each cell. Diamond-Square alternates two steps: the diamond step sets the centre of each square from its four corners, and the square step sets the edge midpoints from the surrounding diamond. That alternation spreads the random offsets more evenly and reduces the axis-aligned creases that plain midpoint subdivision tends to leave.
+
+## Fractal Brownian motion and hybrid multifractal
+
+Fractal Brownian motion sums several layers, or octaves, of noise. Each octave multiplies the frequency by the frequency delta and the amplitude by the amplitude delta, so every layer adds finer and fainter detail. The capture uses 8 octaves, a base amplitude of 0.5 and frequency of 1, an amplitude delta (gain) of 0.5 and a frequency delta of 2.
+
+With **Hybrid Multifractal** enabled, each octave is weighted by the value of the ones before it. Low, smooth areas stay smooth and detail concentrates on higher ground, which gives valleys and ridges a different character instead of a uniformly noisy surface.
+
+<VisualPlaceholder
+  kind="hero"
+  src="/assets/procedural-terrain/algorithms-comparison.jpg"
+  description="Three generated terrains in the same scene, left to right: Midpoint Displacement, Diamond-Square and hybrid multifractal FBM."
+/>
+
+<VisualPlaceholder
+  kind="inline"
+  src="/assets/procedural-terrain/fbm-parameters.mp4"
+  description="Changing octaves, gain and frequency in the inspector and regenerating the FBM terrain."
+/>
+
+## Thermal erosion
+
+Thermal erosion simulates material sliding down slopes that are too steep to hold it. For each cell, the height difference with its lower neighbours is compared to a threshold `T`; where it is exceeded, a fraction `c` of the excess moves downhill. Repeating the pass softens sharp peaks and piles material at the foot of slopes. The capture uses `c = 0.5` and `T = 0.01`, and the tool reports the minimum and maximum height of the terrain after erosion (0.0108 and 1.0).
+
+<VisualPlaceholder
+  kind="inline"
+  src="/assets/procedural-terrain/erosion.mp4"
+  description="The same FBM terrain before and after applying thermal erosion."
+/>
+
+## Populating the terrain
+
+The last section of the tool scatters instances of a prefab over a target terrain. It takes the prefab, the number of instances and a minimum and maximum scale, so each object gets its own size within that range (`stone_4`, 100 instances and a 0.8 to 1.5 scale range in the capture). [PENDING: how positions and rotations are chosen, for example random over the surface or aligned to the terrain normal]
+
+<VisualPlaceholder
+  kind="inline"
+  src="/assets/procedural-terrain/spawn-objects.mp4"
+  description="Spawning object instances over the eroded terrain from the editor tool."
+/>
 
 ## Triplanar mapping
+
+Triplanar mapping is a texturing technique that solves the classic problem of applying textures to terrains with steep slopes. With normal UVs, the texture stretches on vertical areas because the coordinates are meant for horizontal surfaces. Triplanar projects the texture from three orthogonal directions (X, Y, Z) and blends the results based on the surface normal, eliminating stretching regardless of orientation. It's the foundation of almost any modern game terrain with cliffs or non-flat geometry.
 
 The triplanar shader samples the same texture three times, once per each orthogonal plane (XY, XZ, YZ), using world coordinates as UVs. It then blends the three samples using the surface normal as weight: the axis whose normal component is largest dominates the result.
 
 On a horizontal surface (normal pointing up), the XZ projection dominates and you see the texture from the Y axis. On a vertical cliff (normal pointing sideways), the lateral projection wins and the texture is projected correctly, without stretching. The transition between projections is continuous because the blending uses the squared components of the normal, which gives a smooth weight with no discontinuities.
 
 <VisualPlaceholder
+  kind="hero"
+  fit="contain"
+  src="/assets/procedural-terrain/terrain-shader-graph.png"
+  description="The terrain material in Shader Graph: TriplanarMapping, TriplanarSnowBlend and SnowVertexDisplacement as Custom Function nodes feeding the vertex and fragment stages."
+/>
+
+<VisualPlaceholderPair
   kind="inline"
-  description="Side-by-side comparison: same terrain with standard texture (showing stretching on the slope) vs with triplanar (clean across all geometry)."
+  srcA="/assets/procedural-terrain/triplanar-off.png"
+  srcB="/assets/procedural-terrain/triplanar-on.png"
+  descriptionA="Terrain slope with standard UV texturing, showing the stretched texture."
+  descriptionB="The same slope with triplanar mapping, clean across all geometry."
 />
 
 ## Snow accumulation by surface orientation
@@ -46,6 +121,7 @@ The result is that snow appears on peaks and flatlands, respects cliffs by leavi
 
 <VisualPlaceholder
   kind="inline"
+  src="/assets/procedural-terrain/snow-slopes.png"
   description="Capture of the snow-covered terrain showing how vertical walls stay rocky and horizontal surfaces stay snowy."
 />
 
@@ -57,7 +133,8 @@ This is implemented in `SnowVertexDisplacement`, a shader that displaces the ter
 
 <VisualPlaceholder
   kind="inline"
-  description="GIF of the terrain with snow varying in real time as X/Z are pressed, showing how the geometry grows and shrinks."
+  src="/assets/procedural-terrain/snow-control.mp4"
+  description="The terrain with snow varying in real time as X/Z are pressed, showing how the geometry grows and shrinks."
 />
 
 ## Reaction to physical impacts
@@ -74,15 +151,33 @@ The detail of adding `_MaxThickness` to the impact point Y is what makes the def
 
 <VisualPlaceholder
   kind="inline"
-  description="GIF of the impact system: multiple balls fired in succession, showing how the snow bounces locally where they hit."
+  src="/assets/procedural-terrain/impact-bounce.mp4"
+  description="The impact system: multiple balls fired in succession, showing how the snow bounces locally where they hit."
 />
 
-## Complementary exercises
+## Water shader
 
-The project includes four other exercises that make up a complete scene system, though the technical anchor is the triplanar shader with snow.
+The water surface is built in Shader Graph, with its motion in the vertex stage and its pattern in the fragment stage.
 
-- **Base terrain models** and **eroded models**: two comparative scenes with different generation and erosion algorithms, useful as a geometry base to test the triplanar.
-- **Models with objects**: scene with object instances distributed across the terrain, to validate the full pipeline.
+In the vertex stage, the object-space position is split and its X and Z components are offset by time multiplied by `WaveSpeed`. That scrolling coordinate feeds a Simple Noise node scaled by `NoiseScale`; the noise is multiplied by `WaveStrength`, offset by `Height`, and written back as the vertex Y. The surface rises and falls in slowly travelling waves.
+
+In the fragment stage, a Voronoi node tiled 10 by 10, with a cell density of 3 and its angle offset driven by time, produces cells that shift continuously. Raising the result to the power of 5 keeps only the brightest cell borders, and adding them to a blue base colour draws bright, moving lines across the water. Smoothness is set to 0.5 and transparency comes from an `Opacity` property.
+
+<VisualPlaceholder
+  kind="hero"
+  fit="contain"
+  src="/assets/procedural-terrain/water-shader-graph.png"
+  description="The water shader in Shader Graph: noise-driven vertex waves and a Voronoi pattern sharpened with Power over a blue base colour."
+/>
+
+<VisualPlaceholder
+  kind="inline"
+  src="/assets/procedural-terrain/water.mp4"
+  description="The water surface in the scene: travelling waves and moving Voronoi lines."
+/>
+
+## Rest of the scene
+
 - **Tree with wind**: shader (this one in Shader Graph) that simulates leaf deformation from wind, using temporal noise.
 
 Everything integrates into a playable scene with a custom FPS controller (`FPSController`, `MouseLookFPS`), where you can move, shoot, and modify the terrain in real time.
