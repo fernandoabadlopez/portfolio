@@ -45,7 +45,15 @@ const PINS = [0, COLS - 1];
 const PIN_X = 0.36;
 
 // Compliance in m/N. Structural edges are near-inextensible, bending is soft.
-const COMPLIANCE = [1e-8, 1e-7, 2e-5];
+const COMPLIANCE = [1e-8, 1e-7, 5e-7];
+
+// The pointer holds a particle through a stiff but compliant attachment, not a
+// kinematic snap, so the cloth can pull back instead of inverting.
+const GRAB_COMPLIANCE = 2e-7;
+// Reach limit: a held particle may not be pulled further from any pin than
+// its rest distance times this factor.
+const GRAB_REACH = 1.08;
+const MAX_SPEED = 6;
 
 const IK_JOINTS = [3, 10, 18].flatMap((i) => [3, 8, 14].map((j) => j * COLS + i));
 
@@ -106,6 +114,9 @@ export function mountCloth(canvas: HTMLCanvasElement, options: ClothOptions): Cl
       if (j < ROWS - 2) pairs.push(k, k + COLS * 2), kinds.push(2);
     }
   }
+  // Flat layout before the pins are pulled in: the source of rest distances
+  // for the grab reach limit.
+  const restFlat = Float32Array.from(pos);
   for (const p of PINS) invMass[p] = 0;
 
   const constraintCount = kinds.length;
@@ -121,7 +132,6 @@ export function mountCloth(canvas: HTMLCanvasElement, options: ClothOptions): Cl
   let time = 0;
   let hasReference = false;
   let grabbed = -1;
-  let grabMass = 1;
   const grabTarget = [0, 0, 0];
   let grabDepth = 0;
 
@@ -140,13 +150,6 @@ export function mountCloth(canvas: HTMLCanvasElement, options: ClothOptions): Cl
       pos[o] += vel[o] * h;
       pos[o + 1] += vel[o + 1] * h;
       pos[o + 2] += vel[o + 2] * h;
-    }
-
-    if (grabbed >= 0) {
-      const o = grabbed * 3;
-      pos[o] = grabTarget[0];
-      pos[o + 1] = grabTarget[1];
-      pos[o + 2] = grabTarget[2];
     }
 
     // XPBD distance projection. One iteration per substep, so the Lagrange
@@ -177,12 +180,32 @@ export function mountCloth(canvas: HTMLCanvasElement, options: ClothOptions): Cl
       pos[b + 2] += wb * s * dz;
     }
 
+    // Pointer attachment as a zero-rest-length XPBD constraint to the target.
+    if (grabbed >= 0) {
+      const o = grabbed * 3;
+      const w = invMass[grabbed];
+      const k = w / (w + GRAB_COMPLIANCE / h2);
+      pos[o] += (grabTarget[0] - pos[o]) * k;
+      pos[o + 1] += (grabTarget[1] - pos[o + 1]) * k;
+      pos[o + 2] += (grabTarget[2] - pos[o + 2]) * k;
+    }
+
     const damping = 1 - 0.8 * h;
     for (let k = 0; k < N; k++) {
       const o = k * 3;
-      vel[o] = ((pos[o] - prev[o]) / h) * damping;
-      vel[o + 1] = ((pos[o + 1] - prev[o + 1]) / h) * damping;
-      vel[o + 2] = ((pos[o + 2] - prev[o + 2]) / h) * damping;
+      let vx = (pos[o] - prev[o]) / h;
+      let vy = (pos[o + 1] - prev[o + 1]) / h;
+      let vz = (pos[o + 2] - prev[o + 2]) / h;
+      const speed = Math.hypot(vx, vy, vz);
+      if (speed > MAX_SPEED) {
+        const s = MAX_SPEED / speed;
+        vx *= s;
+        vy *= s;
+        vz *= s;
+      }
+      vel[o] = vx * damping;
+      vel[o + 1] = vy * damping;
+      vel[o + 2] = vz * damping;
     }
     time += h;
   }
@@ -604,8 +627,6 @@ export function mountCloth(canvas: HTMLCanvasElement, options: ClothOptions): Cl
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
     grabbed = best;
-    grabMass = invMass[best];
-    invMass[best] = 0;
     grabDepth = depth[best];
     const o = best * 3;
     grabTarget[0] = pos[o];
@@ -618,16 +639,40 @@ export function mountCloth(canvas: HTMLCanvasElement, options: ClothOptions): Cl
   function onMove(e: PointerEvent) {
     if (grabbed < 0) return;
     const [px, py] = pointerPosition(e);
-    const w = unproject(px, py, grabDepth);
-    grabTarget[0] = w[0];
-    grabTarget[1] = w[1];
-    grabTarget[2] = w[2];
+    const target = unproject(px, py, grabDepth);
+    // Keep the target within what the cloth can physically reach from every
+    // pin, so a fast or far drag cannot overstretch and fold the mesh.
+    for (let pass = 0; pass < 2; pass++) {
+      for (const pin of PINS) {
+        const po = pin * 3;
+        const go = grabbed * 3;
+        const reach =
+          GRAB_REACH *
+          Math.hypot(
+            restFlat[go] - restFlat[po],
+            restFlat[go + 1] - restFlat[po + 1],
+            restFlat[go + 2] - restFlat[po + 2],
+          );
+        const dx = target[0] - pos[po];
+        const dy = target[1] - pos[po + 1];
+        const dz = target[2] - pos[po + 2];
+        const len = Math.hypot(dx, dy, dz);
+        if (len > reach && len > 0) {
+          const s = reach / len;
+          target[0] = pos[po] + dx * s;
+          target[1] = pos[po + 1] + dy * s;
+          target[2] = pos[po + 2] + dz * s;
+        }
+      }
+    }
+    grabTarget[0] = target[0];
+    grabTarget[1] = target[1];
+    grabTarget[2] = target[2];
     requestFrame();
   }
 
   function onUp() {
     if (grabbed < 0) return;
-    invMass[grabbed] = grabMass;
     grabbed = -1;
     delete canvas.dataset.dragging;
     requestFrame();
