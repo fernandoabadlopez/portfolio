@@ -1,0 +1,39 @@
+---
+import { assetExists, mediaType } from '../lib/media';
+import { ui } from '../i18n/utils';
+
+interface Props {
+  /** Tall interface capture shown at its natural aspect ratio. */
+  src?: string;
+  description: string;
+}
+
+const { src, description } = Astro.props;
+const lang = Astro.url.pathname.startsWith('/es/') ? 'es' : 'en';
+
+const hasAsset = mediaType(src) === 'image' && assetExists(src);
+
+if (src && !hasAsset) {
+  console.warn(`VisualAside: ${src} is not an image in public/ yet, rendering placeholder`);
+}
+---
+
+<!-- Text beside a tall capture: the slot reads on the left, the figure keeps
+     its own proportions on the right instead of being letterboxed. -->
+<div class="figure-aside">
+  <div class="figure-aside-text">
+    <slot />
+  </div>
+
+  <figure class="visual-aside figure" data-kind="panel">
+    <figcaption class="fig-bar">
+      <span class="fig-label"></span>
+      {!hasAsset && <span class="fig-state">{ui[lang].caseStudy.pending}</span>}
+    </figcaption>
+
+    <div class:list={['fig-box', !hasAsset && 'is-pending']}>
+      {hasAsset && <img src={src} alt={description} loading="lazy" />}
+      {!hasAsset && <p>{description}</p>}
+    </div>
+  </figure>
+</div>

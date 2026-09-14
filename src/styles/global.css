@@ -1116,6 +1116,43 @@
     object-fit: contain;
   }
 
+  /* Text beside a tall interface capture kept at its natural proportions. */
+  .case-body > .figure-aside {
+    grid-column: 1 / -1;
+  }
+
+  .figure-aside {
+    display: grid;
+    gap: 1.5rem;
+    margin-block: 0 2.5rem;
+  }
+
+  .figure-aside .figure {
+    width: min(100%, 22rem);
+    margin-block: 0;
+  }
+
+  @media (min-width: 900px) {
+    .figure-aside {
+      grid-template-columns: minmax(0, var(--measure)) minmax(16rem, 22rem);
+      column-gap: clamp(2rem, 4vw, 3.5rem);
+      align-items: start;
+    }
+
+    .figure-aside .figure {
+      width: 100%;
+    }
+  }
+
+  .figure[data-kind='panel'] .fig-box img {
+    height: auto;
+    object-fit: initial;
+  }
+
+  .figure[data-kind='panel'] .fig-box.is-pending {
+    aspect-ratio: 3 / 4;
+  }
+
   /* Uncooked: a hatched node body carrying the asset description. */
   .fig-box.is-pending {
     display: grid;

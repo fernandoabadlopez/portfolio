@@ -10,6 +10,7 @@ heroPlaceholder: true
 
 import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
 import VisualPlaceholderPair from '../../components/VisualPlaceholderPair.astro';
+import VisualAside from '../../components/VisualAside.astro';
 
 <VisualPlaceholder
   kind="hero"
@@ -37,14 +38,23 @@ Generation, erosion and spawning live in one editor tool in the Unity inspector.
 
 ## The terrain editor tool
 
-All generation happens from a single inspector panel. A global block sets the parameters shared by the subdivision algorithms: the number of divisions `N`, the noise amplitude `A`, the amplitude falloff `H` and a random seed. Below it, each technique has its own section with a target `Terrain` and a button that regenerates it, so the algorithms can be compared side by side on separate terrains.
-
-<VisualPlaceholder
-  kind="inline"
-  fit="contain"
+<VisualAside
   src="/assets/procedural-terrain/addon-inspector.png"
   description="The editor tool in the Unity inspector: global configuration, Midpoint, Diamond-Square, fractal Brownian motion, thermal erosion and object spawning."
-/>
+>
+
+All generation happens from a single panel in the Unity inspector, split into six blocks from top to bottom:
+
+1. **Terrain Configuration (Global)**: the number of divisions `N`, the noise amplitude `A`, the amplitude falloff `H` and the seed shared by the subdivision algorithms.
+2. **Midpoint Terrain**: a target terrain and a button that generates it with Midpoint Displacement.
+3. **Diamond-Square Terrain**: the same for Diamond-Square.
+4. **Fractal Brownian Motion**: amplitude, frequency, gain, frequency delta, octaves, its own seed and the Hybrid Multifractal toggle.
+5. **Thermal Erosion**: a target terrain, the erosion factor `c`, the threshold `T` and the resulting height range.
+6. **Add 3D Elements**: a target terrain, the prefab, the number of instances and a scale range.
+
+Each technique points at its own `Terrain`, so the algorithms can be compared side by side on separate terrains.
+
+</VisualAside>
 
 ## Midpoint Displacement and Diamond-Square
 

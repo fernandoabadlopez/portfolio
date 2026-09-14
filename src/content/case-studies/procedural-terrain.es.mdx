@@ -10,6 +10,7 @@ heroPlaceholder: true
 
 import VisualPlaceholder from '../../components/VisualPlaceholder.astro';
 import VisualPlaceholderPair from '../../components/VisualPlaceholderPair.astro';
+import VisualAside from '../../components/VisualAside.astro';
 
 <VisualPlaceholder
   kind="hero"
@@ -37,14 +38,23 @@ La generación, la erosión y la colocación de objetos viven en una única herr
 
 ## La herramienta de editor
 
-Toda la generación se hace desde un único panel del inspector. Un bloque global fija los parámetros que comparten los algoritmos de subdivisión: el número de divisiones `N`, la amplitud del ruido `A`, la caída de amplitud `H` y una semilla aleatoria. Debajo, cada técnica tiene su propia sección con un `Terrain` de destino y un botón que lo regenera, de modo que los algoritmos se pueden comparar lado a lado sobre terrenos separados.
-
-<VisualPlaceholder
-  kind="inline"
-  fit="contain"
+<VisualAside
   src="/assets/procedural-terrain/addon-inspector.png"
   description="La herramienta de editor en el inspector de Unity: configuración global, Midpoint, Diamond-Square, fractal Brownian motion, erosión térmica y colocación de objetos."
-/>
+>
+
+Toda la generación se hace desde un único panel del inspector de Unity, dividido en seis bloques de arriba abajo:
+
+1. **Terrain Configuration (Global)**: el número de divisiones `N`, la amplitud del ruido `A`, la caída de amplitud `H` y la semilla que comparten los algoritmos de subdivisión.
+2. **Midpoint Terrain**: un terreno de destino y un botón que lo genera con Midpoint Displacement.
+3. **Diamond-Square Terrain**: lo mismo con Diamond-Square.
+4. **Fractal Brownian Motion**: amplitud, frecuencia, gain, delta de frecuencia, octavas, su propia semilla y el interruptor Hybrid Multifractal.
+5. **Thermal Erosion**: un terreno de destino, el factor de erosión `c`, el umbral `T` y el rango de alturas resultante.
+6. **Add 3D Elements**: un terreno de destino, el prefab, el número de instancias y un rango de escala.
+
+Cada técnica apunta a su propio `Terrain`, así que los algoritmos se pueden comparar lado a lado sobre terrenos separados.
+
+</VisualAside>
 
 ## Midpoint Displacement y Diamond-Square
 
