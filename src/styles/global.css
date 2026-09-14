@@ -1,198 +1,1255 @@
 @import 'tailwindcss';
 
 /* ---------------------------------------------------------------------------
-   Fonts. Self-hosted WOFF2, see public/fonts/licenses/ for the licences.
-   Technor and Switzer are variable; Geist Mono ships as static cuts.
+   Fonts. Self-hosted variable WOFF2, see public/fonts/licenses/ (SIL OFL).
+   Martian Grotesk: wght 100-1000, wdth 75-200. Martian Mono: wght 100-800,
+   wdth 75-112.5.
 --------------------------------------------------------------------------- */
 
 @font-face {
-  font-family: 'Technor';
-  src: url('/fonts/Technor-Variable.woff2') format('woff2-variations');
-  font-weight: 200 900;
+  font-family: 'Martian Grotesk';
+  src: url('/fonts/MartianGrotesk-Variable.woff2') format('woff2');
+  font-weight: 100 1000;
+  font-stretch: 75% 200%;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'Switzer';
-  src: url('/fonts/Switzer-Variable.woff2') format('woff2-variations');
-  font-weight: 100 900;
+  font-family: 'Martian Mono';
+  src: url('/fonts/MartianMono-Variable.woff2') format('woff2');
+  font-weight: 100 800;
+  font-stretch: 75% 112.5%;
   font-style: normal;
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('/fonts/GeistMono-Regular.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('/fonts/GeistMono-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-
-/* ---------------------------------------------------------------------------
-   Tokens. Colours are neutral placeholders; the palette is not decided yet.
---------------------------------------------------------------------------- */
-
-/* Expose the tokens as Tailwind utilities (font-display, text-fg-muted, ...). */
+/* Expose the core tokens as Tailwind utilities (bg-ground, text-ink, ...). */
 @theme inline {
-  --font-display: var(--font-display);
-  --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
-
-  --color-bg: var(--color-bg);
-  --color-fg: var(--color-fg);
-  --color-fg-muted: var(--color-fg-muted);
-  --color-border: var(--color-border);
-  --color-code-bg: var(--color-code-bg);
-
-  --text-xs: var(--text-xs);
-  --text-sm: var(--text-sm);
-  --text-base: var(--text-base);
-  --text-lg: var(--text-lg);
-  --text-xl: var(--text-xl);
-  --text-2xl: var(--text-2xl);
-  --text-3xl: var(--text-3xl);
-  --text-4xl: var(--text-4xl);
-  --text-5xl: var(--text-5xl);
-
-  --container-prose: var(--width-prose);
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-accent: var(--accent);
 }
 
 /* ---------------------------------------------------------------------------
-   Base typography.
+   Tokens. The world is a node network: cool grey ground, lighter node bodies,
+   ink, grey wires, dark viewer frames and one chartreuse accent reserved for
+   the active wire and selected node.
 --------------------------------------------------------------------------- */
 
 @layer base {
   :root {
-    --font-display: Technor, system-ui, sans-serif;
-    --font-body: Switzer, system-ui, sans-serif;
-    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --ground: #e3e6e9;
+    --panel: #f1f3f4;
+    --panel-2: #d8dce0;
+    --ink: #101214;
+    --ink-2: #4a5057;
+    --wire: #8a9096;
+    --rule: #c3c8ce;
+    --accent: #c6f432;
+    --viewer-ground: #101214;
+    --viewer-ink: #e3e6e9;
+    --viewer-ink-2: #9aa2aa;
 
-    --color-bg: #fafafa;
-    --color-fg: #0a0a0a;
-    --color-fg-muted: #666666;
-    --color-border: #d4d4d4;
-    --color-code-bg: #f0f0f0;
+    --font-body: 'Martian Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-code: 'Martian Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-    --text-xs: 0.8rem;
-    --text-sm: 0.9rem;
-    --text-base: 1rem;
-    --text-lg: 1.25rem;
-    --text-xl: 1.563rem;
-    --text-2xl: 1.953rem;
-    --text-3xl: 2.441rem;
-    --text-4xl: 3.052rem;
-    --text-5xl: 3.815rem;
+    --radius: 4px;
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 
-    --width-prose: 68ch;
+    --shell: 90rem;
+    --gutter: clamp(1rem, 3vw, 2.5rem);
+    --nav-h: 3.5rem;
+    --measure: 68ch;
+
+    color-scheme: light;
   }
 
   html {
     font-family: var(--font-body);
-    font-size: 18px;
-    color: var(--color-fg);
-    background-color: var(--color-bg);
+    font-size: 100%;
+    color: var(--ink);
+    background-color: var(--ground);
     line-height: 1.6;
     -webkit-text-size-adjust: 100%;
+    scrollbar-color: var(--wire) var(--ground);
+    scroll-padding-top: calc(var(--nav-h) + 1.5rem);
   }
 
   body {
-    margin: 0;
-    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    font-stretch: 100%;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  h1 {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: clamp(2rem, 5vw, 3.815rem);
-    line-height: 1.05;
-    letter-spacing: -0.02em;
-    margin-block: 0;
-    text-wrap: balance;
+  main {
+    flex: 1;
   }
 
-  h2 {
-    font-family: var(--font-display);
-    font-weight: 900;
-    font-size: clamp(1.5rem, 3vw, 2.441rem);
-    line-height: 1.15;
-    letter-spacing: -0.01em;
-    margin-block: 3rem 1rem;
-    text-wrap: balance;
+  ::selection {
+    background: var(--accent);
+    color: var(--ink);
   }
 
-  h3 {
-    font-family: var(--font-body);
-    font-weight: 700;
-    font-size: var(--text-lg);
-    margin-block: 2rem 0.75rem;
-  }
-
-  p {
-    max-width: var(--width-prose);
-    margin-block: 0 1rem;
-    text-wrap: pretty;
-  }
-
-  ul,
-  ol {
-    max-width: var(--width-prose);
-    padding-left: 1.5rem;
-    margin-block: 0 1rem;
-  }
-
-  li {
-    margin-block: 0.5rem 0;
-  }
-
-  code {
-    font-family: var(--font-mono);
-    font-size: 0.9em;
-    background-color: var(--color-code-bg);
-    padding: 0.15em 0.35em;
-    border-radius: 3px;
-  }
-
-  pre {
-    font-family: var(--font-mono);
-    font-size: var(--text-sm);
-    background-color: var(--color-code-bg);
-    padding: 1rem 1.25rem;
-    overflow-x: auto;
-    margin-block: 1.5rem;
-    border-radius: 4px;
-    max-width: 100%;
-  }
-
-  pre code {
-    background-color: transparent;
-    padding: 0;
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+    border-radius: 2px;
   }
 
   a {
-    color: var(--color-fg);
-    text-decoration: underline;
-    text-underline-offset: 0.2em;
+    color: inherit;
   }
 
-  a:hover {
+  code,
+  kbd,
+  pre {
+    font-family: var(--font-code);
+  }
+}
+
+@layer components {
+  .shell {
+    width: 100%;
+    max-width: var(--shell);
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  .skip {
+    position: absolute;
+    left: var(--gutter);
+    top: 0.5rem;
+    z-index: 30;
+    padding: 0.5rem 0.75rem;
+    background: var(--ink);
+    color: var(--ground);
+    border-radius: var(--radius);
+    transform: translateY(-200%);
+  }
+
+  .skip:focus-visible {
+    transform: none;
+  }
+
+  /* --- Header, path bar, footer ------------------------------------------ */
+
+  .site-head {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: var(--ground);
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .site-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem clamp(0.75rem, 2vw, 1.75rem);
+    min-height: var(--nav-h);
+    padding-block: 0.5rem;
+  }
+
+  .brand {
+    margin-right: auto;
+    font-weight: 900;
+    font-stretch: 160%;
+    font-size: 1.125rem;
+    letter-spacing: -0.02em;
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: clamp(0.75rem, 2vw, 1.75rem);
+    font-size: 0.875rem;
+  }
+
+  /* Narrow phones: monogram and language on the first row, links below. */
+  @media (max-width: 479.98px) {
+    .site-nav .lang {
+      order: 2;
+    }
+
+    .nav-links {
+      order: 3;
+      width: 100%;
+      gap: 1.25rem;
+    }
+  }
+
+  .nav-links a,
+  .path a,
+  .params-link,
+  .site-foot a {
+    text-decoration-line: underline;
+    text-decoration-color: transparent;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.35em;
+    transition: text-decoration-color 150ms ease;
+  }
+
+  .nav-links a[aria-current='page'] {
+    text-decoration-color: var(--ink);
     text-decoration-thickness: 2px;
   }
 
-  strong {
-    font-weight: 600;
+  .path-bar {
+    border-top: 1px solid var(--rule);
+    background: var(--panel);
   }
 
-  em {
-    font-style: italic;
+  .path {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 0.5rem;
+    padding-block: 0.4rem;
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--ink-2);
+    text-transform: lowercase;
+  }
+
+  .path-sep {
+    color: var(--wire);
+  }
+
+  .site-foot {
+    margin-top: clamp(3rem, 8vw, 6rem);
+    border-top: 1px solid var(--rule);
+    font-size: 0.8125rem;
+    color: var(--ink-2);
+  }
+
+  .site-foot-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1.25rem;
+  }
+
+  .lang {
+    display: flex;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+    font-family: var(--font-code);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+  }
+
+  .lang span,
+  .lang a {
+    display: block;
+    padding: 0.2rem 0.5rem;
+    text-decoration: none;
+  }
+
+  .lang span {
+    background: var(--ink);
+    color: var(--ground);
+  }
+
+  .lang a {
+    color: var(--ink-2);
+    transition: background-color 150ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nav-links a:hover,
+    .path a:hover,
+    .params-link:hover,
+    .site-foot a:hover {
+      text-decoration-color: currentColor;
+    }
+
+    .lang a:hover {
+      background: var(--panel-2);
+      color: var(--ink);
+    }
+  }
+
+  /* --- Stack tokens ------------------------------------------------------- */
+
+  .stack {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+  }
+
+  .stack li {
+    padding: 0.125rem 0.4rem;
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    font-family: var(--font-code);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+    background: var(--panel);
+  }
+
+  /* --- Home: name, network, viewer ---------------------------------------- */
+
+  .home {
+    padding-block: clamp(1.5rem, 3.5vw, 2.75rem) 0;
+  }
+
+  .home-name {
+    font-weight: 850;
+    font-stretch: 138%;
+    font-size: clamp(2.1rem, 5.6vw, 5.25rem);
+    line-height: 0.95;
+    letter-spacing: -0.035em;
+    text-wrap: balance;
+  }
+
+  .home-role {
+    margin-top: 0.75rem;
+    font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
+    color: var(--ink-2);
+  }
+
+  /*
+    Areas: the node graph, the viewer, and a lower row holding the parameter
+    pane beside the output node. Phones read graph, viewer, parameters, then
+    NaN last; wider screens keep the output directly under the graph so the
+    wires drop straight into it.
+  */
+  .network {
+    position: relative;
+    display: grid;
+    grid-template-areas: 'graph' 'viewer' 'lower';
+    gap: 1.5rem;
+    margin-top: clamp(1.75rem, 3.5vw, 2.75rem);
+  }
+
+  .graph {
+    grid-area: graph;
+    display: grid;
+    gap: 1.25rem;
+  }
+
+  .viewer {
+    grid-area: viewer;
+  }
+
+  .network-lower {
+    grid-area: lower;
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 768px) {
+    .graph {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+    }
+
+    .network-lower {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .network-lower .node-out {
+      flex: 0 0 15rem;
+    }
+
+    .network-lower .params {
+      flex: 1;
+    }
+  }
+
+  /* Desktop: wires drop from the graph straight into the output node, which
+     sits left of the parameter pane. The spare height of the taller viewer
+     goes to the lower row so the output node never moves between modes. */
+  @media (min-width: 1180px) {
+    .network {
+      grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      grid-template-rows: auto 1fr;
+      grid-template-areas: 'graph viewer' 'lower viewer';
+      align-items: start;
+      column-gap: clamp(1.5rem, 2.5vw, 2.5rem);
+      row-gap: 0;
+    }
+
+    .network-lower {
+      margin-top: clamp(2.5rem, 4.5vw, 3.5rem);
+    }
+
+    .network-lower .node-out {
+      order: -1;
+    }
+  }
+
+  .wires {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .wires path {
+    fill: none;
+    stroke: var(--wire);
+    stroke-width: 1.5;
+  }
+
+  .wires .wire-casing {
+    stroke: none;
+  }
+
+  .wires .wire-casing.is-active {
+    stroke: var(--ink);
+    stroke-width: 4.5;
+  }
+
+  .wires .wire.is-active {
+    stroke: var(--accent);
+    stroke-width: 2;
+    stroke-dasharray: 7 5;
+  }
+
+  .wires .port {
+    fill: var(--panel);
+    stroke: var(--ink);
+    stroke-width: 1;
+  }
+
+  /* A network box: its nodes hang off a vertical bus that leaves the box
+     through one output port. */
+  .netbox {
+    position: relative;
+    padding: 0.625rem 0.625rem 1rem 1.75rem;
+    background: var(--panel-2);
+    border-radius: var(--radius);
+  }
+
+  .netbox::before {
+    content: '';
+    position: absolute;
+    left: 0.875rem;
+    top: 2.9rem;
+    bottom: 0;
+    width: 1px;
+    background: var(--wire);
+  }
+
+  .netbox-port {
+    position: absolute;
+    left: calc(0.875rem - 3px);
+    bottom: -3.5px;
+    width: 7px;
+    height: 7px;
+    background: var(--panel);
+    border: 1px solid var(--ink);
+  }
+
+  .netbox-label {
+    padding-bottom: 0.5rem;
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--ink-2);
+  }
+
+  .nodes {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .nodes li {
+    display: flex;
+  }
+
+  .netbox .node::before {
+    content: '';
+    position: absolute;
+    top: 0.55rem;
+    left: calc(-0.875rem - 4px);
+    width: 7px;
+    height: 7px;
+    background: var(--panel);
+    border: 1px solid var(--ink);
+  }
+
+  .netbox .node[data-active]::before {
+    background: var(--accent);
+  }
+
+  .node {
+    position: relative;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    text-decoration: none;
+    transition:
+      transform 160ms var(--ease-out),
+      border-color 150ms ease;
+  }
+
+  a.node:active {
+    transform: scale(0.98);
+  }
+
+  .node-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid var(--rule);
+    border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    transition: background-color 150ms ease;
+  }
+
+  .node-name {
+    font-family: var(--font-code);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .node-state {
+    display: none;
+    font-size: 0.6875rem;
+    color: var(--ink);
+  }
+
+  .node-title {
+    padding: 0.5rem 0.5rem 0.75rem;
+    font-size: 0.9375rem;
+    font-weight: 560;
+    line-height: 1.3;
+    text-wrap: balance;
+  }
+
+  .node-detail {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.45;
+    color: var(--ink-2);
+  }
+
+  .node[data-active] .node-head {
+    background: var(--accent);
+  }
+
+  .node[data-active] .node-state {
+    display: inline;
+  }
+
+  .node-out {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--ground);
+  }
+
+  .node-out .node-head {
+    border-bottom-color: #33383d;
+  }
+
+  .node-out .node-name {
+    font-family: var(--font-body);
+    font-weight: 900;
+    font-stretch: 160%;
+    font-size: 0.875rem;
+  }
+
+  .node-out .node-title {
+    font-size: 1.0625rem;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    a.node:hover {
+      border-color: var(--ink);
+    }
+
+    .node-out:hover .node-title {
+      text-decoration: underline;
+      text-underline-offset: 0.3em;
+    }
+  }
+
+  @media (min-width: 768px) {
+    .node-detail {
+      display: none;
+    }
+  }
+
+  /* Phones: boxes stack with their own bus lanes. Nodes already show tagline
+     and stack, so the parameter pane keeps only the name and the open link. */
+  @media (max-width: 767.98px) {
+    .params-tagline,
+    .params-stack {
+      display: none;
+    }
+  }
+
+  /* Below desktop the output node follows the viewer, so there are no wires
+     to draw; each box keeps its own bus lane and NaN closes the page. */
+  @media (max-width: 1179.98px) {
+    .wires,
+    .netbox-port {
+      display: none;
+    }
+  }
+
+  .viewer {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  @media (min-width: 768px) and (max-width: 1179.98px) {
+    .viewer {
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      grid-template-rows: auto 1fr;
+      align-items: start;
+    }
+
+    .viewer-frame {
+      grid-row: span 2;
+    }
+  }
+
+  .viewer-frame {
+    overflow: hidden;
+    background: var(--viewer-ground);
+    border-radius: var(--radius);
+    color: var(--viewer-ink);
+  }
+
+  .viewer-stage {
+    aspect-ratio: 16 / 11;
+  }
+
+  .viewer-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+    touch-action: none;
+  }
+
+  .viewer-canvas[data-dragging] {
+    cursor: grabbing;
+  }
+
+  @media (pointer: coarse) {
+    .viewer-canvas {
+      touch-action: pan-y;
+    }
+  }
+
+  /* Readout bands sit outside the stage so the cloth never covers them. */
+  .viewer-bar,
+  .viewer-readout {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.25rem 1rem;
+    padding: 0.45rem 0.75rem;
+    font-family: var(--font-code);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+  }
+
+  /* Both bands keep a constant height in every mode so the switch below never
+     moves under the cursor. */
+  .viewer-bar {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    border-bottom: 1px solid #262a2e;
+  }
+
+  .viewer-bar > span:first-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .viewer-readout {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    white-space: nowrap;
+    border-top: 1px solid #262a2e;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .viewer-readout > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .viewer-dim {
+    color: var(--viewer-ink-2);
+  }
+
+  .modes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1px;
+    padding: 1px;
+    background: var(--rule);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  @media (max-width: 479.98px) {
+    .modes {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .mode {
+    flex: 1 1 auto;
+    padding: 0.4rem 0.5rem;
+    background: var(--panel);
+    font-family: var(--font-code);
+    font-size: 0.6875rem;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition:
+      background-color 150ms ease,
+      color 150ms ease,
+      transform 160ms var(--ease-out);
+  }
+
+  .mode:active {
+    transform: scale(0.97);
+  }
+
+  .mode[aria-pressed='true'] {
+    background: var(--ink);
+    color: var(--ground);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .mode:not([aria-pressed='true']):hover {
+      background: var(--ground);
+      color: var(--ink);
+    }
+  }
+
+  .params {
+    display: grid;
+    gap: 0.625rem;
+    padding: 0.875rem;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+  }
+
+  .params-name {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .params-tagline {
+    font-size: 0.9375rem;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  .params-link {
+    justify-self: start;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration-color: var(--wire);
+  }
+
+  .viewer-note {
+    font-size: 0.75rem;
+    line-height: 1.5;
+    color: var(--ink-2);
+  }
+
+  /* --- Shared parameter lists -------------------------------------------- */
+
+  .params-list {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  .params-list > div {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
+  }
+
+  .params-list dt {
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    color: var(--ink-2);
+  }
+
+  .params-list dd {
+    font-size: 0.9375rem;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  /* Narrow phones: label above value, so values keep the full width. */
+  @media (max-width: 479.98px) {
+    .params-list > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.125rem;
+    }
+  }
+
+  /* --- Case study --------------------------------------------------------- */
+
+  .case {
+    padding-block: clamp(2rem, 4vw, 3.25rem) 0;
+  }
+
+  .case-title,
+  .page-title {
+    max-width: 17em;
+    font-weight: 820;
+    font-stretch: 118%;
+    font-size: clamp(2rem, 4.6vw, 3.9rem);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    text-wrap: balance;
+  }
+
+  .case-tagline {
+    max-width: 58ch;
+    margin-top: 1.125rem;
+    font-size: clamp(1.0625rem, 1.5vw, 1.3125rem);
+    line-height: 1.5;
+    color: var(--ink-2);
+    text-wrap: pretty;
+  }
+
+  .case-head .params-list {
+    max-width: 48rem;
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .case-grid {
+    display: grid;
+    gap: 2.5rem;
+    margin-top: clamp(2.5rem, 5vw, 4rem);
+  }
+
+  .case-rail {
+    display: none;
+  }
+
+  @media (min-width: 1180px) {
+    .case-grid {
+      grid-template-columns: 13.5rem minmax(0, 1fr);
+      gap: clamp(2.5rem, 4vw, 4.5rem);
+    }
+
+    .case-rail {
+      display: block;
+      position: sticky;
+      top: calc(var(--nav-h) + 3.5rem);
+      align-self: start;
+      max-height: calc(100dvh - var(--nav-h) - 5rem);
+      overflow-y: auto;
+    }
+  }
+
+  .case-rail ol {
+    position: relative;
+    display: grid;
+    gap: 0.125rem;
+    padding-left: 1.125rem;
+  }
+
+  .case-rail ol::before {
+    content: '';
+    position: absolute;
+    left: 0.25rem;
+    top: 0.7rem;
+    bottom: 0.7rem;
+    width: 1px;
+    background: var(--wire);
+  }
+
+  .case-rail a {
+    position: relative;
+    display: block;
+    padding-block: 0.3rem;
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    color: var(--ink-2);
+    text-decoration: none;
+    transition: color 150ms ease;
+  }
+
+  .case-rail a::before {
+    content: '';
+    position: absolute;
+    left: calc(-1.125rem + 0.25rem - 3.5px);
+    top: 0.6rem;
+    width: 7px;
+    height: 7px;
+    background: var(--ground);
+    border: 1px solid var(--wire);
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease;
+  }
+
+  .case-rail a[aria-current='true'] {
+    color: var(--ink);
+  }
+
+  .case-rail a[aria-current='true']::before {
+    background: var(--accent);
+    border-color: var(--ink);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .case-rail a:hover {
+      color: var(--ink);
+    }
+  }
+
+  /*
+    Two tracks: prose at reading width, then trailing space. Figures and code
+    span both tracks so they are not capped at the measure.
+  */
+  .case-body {
+    display: grid;
+    grid-template-columns: min(var(--measure), 100%) minmax(0, 1fr);
+    max-width: 64rem;
+  }
+
+  .case-body > * {
+    grid-column: 1;
+  }
+
+  .case-body > .figure,
+  .case-body > pre,
+  .case-body > .full-width {
+    grid-column: 1 / -1;
+  }
+
+  /* --- Prose -------------------------------------------------------------- */
+
+  .prose {
+    font-size: 1.0625rem;
+    line-height: 1.7;
+  }
+
+  .prose > :first-child {
+    margin-top: 0;
+  }
+
+  .prose h2 {
+    margin-block: 3.25rem 0.875rem;
+    font-weight: 760;
+    font-stretch: 110%;
+    font-size: clamp(1.375rem, 2.2vw, 1.75rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .prose h3 {
+    margin-block: 2.25rem 0.5rem;
+    font-weight: 650;
+    font-size: 1.125rem;
+    line-height: 1.3;
+  }
+
+  .prose p,
+  .prose ul,
+  .prose ol {
+    margin-block: 0 1.1rem;
+    text-wrap: pretty;
+  }
+
+  .prose ul,
+  .prose ol {
+    padding-left: 1.25rem;
+  }
+
+  .prose ul {
+    list-style: square;
+  }
+
+  .prose ol {
+    list-style: decimal;
+  }
+
+  .prose li {
+    margin-top: 0.4rem;
+    padding-left: 0.25rem;
+  }
+
+  .prose li::marker {
+    color: var(--wire);
+  }
+
+  .prose strong {
+    font-weight: 650;
+  }
+
+  .prose a {
+    text-decoration-line: underline;
+    text-decoration-color: var(--wire);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.22em;
+    transition: text-decoration-color 150ms ease;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .prose a:hover {
+      text-decoration-color: var(--ink);
+    }
+  }
+
+  .prose :not(pre) > code {
+    padding: 0.1em 0.35em;
+    font-size: 0.84em;
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    overflow-wrap: anywhere;
+  }
+
+  .prose pre {
+    margin-block: 1.75rem;
+    padding: 1.125rem 1.25rem;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    background: var(--viewer-ground);
+    color: var(--viewer-ink);
+    border-radius: var(--radius);
+    scrollbar-color: var(--ink-2) var(--viewer-ground);
+  }
+
+  /* --- Figures ------------------------------------------------------------ */
+
+  .figure {
+    margin-block: 2.5rem;
+    counter-increment: fig-minor;
+  }
+
+  .fig-bar {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    font-family: var(--font-code);
+    font-size: 0.6875rem;
+    color: var(--ink-2);
+  }
+
+  .fig-label::before {
+    content: 'FIG ' counter(fig-major) '.' counter(fig-minor);
+  }
+
+  .fig-pair {
+    display: grid;
+    gap: 0.625rem;
+  }
+
+  @media (min-width: 768px) {
+    .fig-pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .fig-box {
+    overflow: hidden;
+    background: var(--viewer-ground);
+    border-radius: var(--radius);
+  }
+
+  .figure[data-kind='hero'] .fig-box {
+    aspect-ratio: 16 / 9;
+  }
+
+  .figure[data-kind='inline'] .fig-box,
+  .figure[data-kind='gallery'] .fig-box {
+    aspect-ratio: 4 / 3;
+  }
+
+  .fig-box video,
+  .fig-box img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Uncooked: a hatched node body carrying the asset description. */
+  .fig-box.is-pending {
+    display: grid;
+    place-items: center;
+    padding: 1.5rem;
+    border: 1px solid var(--rule);
+    background:
+      repeating-linear-gradient(135deg, var(--rule) 0 1px, transparent 1px 11px), var(--panel);
+  }
+
+  .fig-box.is-pending p {
+    max-width: 40ch;
+    margin: 0;
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    text-align: center;
+    color: var(--ink-2);
+    background: var(--panel);
+    border-radius: var(--radius);
+  }
+
+  /* --- About and pending galleries --------------------------------------- */
+
+  .page {
+    padding-block: clamp(2rem, 4vw, 3.25rem) 0;
+  }
+
+  .page-prose {
+    max-width: var(--measure);
+    margin-top: clamp(1.75rem, 3vw, 2.5rem);
+  }
+
+  .contact {
+    max-width: 48rem;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--rule);
+  }
+
+  .contact-title {
+    margin-bottom: 1rem;
+    font-weight: 760;
+    font-stretch: 110%;
+    font-size: clamp(1.375rem, 2.2vw, 1.75rem);
+    letter-spacing: -0.02em;
+  }
+
+  .contact-list a {
+    text-decoration-line: underline;
+    text-decoration-color: var(--wire);
+    text-underline-offset: 0.22em;
+  }
+
+  .pending-node {
+    max-width: 48rem;
+    margin-top: 2.5rem;
+  }
+
+  .pending-node .node-state {
+    display: inline;
+    color: var(--ink-2);
+  }
+
+  .pending-body {
+    margin: 0.5rem;
+    padding: clamp(3rem, 8vw, 5rem) 1rem;
+    font-family: var(--font-code);
+    font-size: 0.75rem;
+    text-align: center;
+    color: var(--ink-2);
+    background: repeating-linear-gradient(135deg, var(--rule) 0 1px, transparent 1px 11px);
+    border-radius: calc(var(--radius) - 1px);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Motion. One authored moment on the home page (evaluation order), flow on
+   the active wire, and scroll-linked figure reveals. Content is visible by
+   default; everything here only runs when motion is welcome.
+--------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-cook] .node {
+    animation: node-resolve 460ms var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+
+  [data-cook] .node-out {
+    animation-delay: 820ms;
+  }
+
+  [data-cook] .wires path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: wire-draw 480ms var(--ease-in-out) forwards;
+    animation-delay: calc(360ms + var(--i, 0) * 70ms);
+  }
+
+  :root:not([data-cook]) .wires .wire.is-active {
+    animation: wire-flow 700ms linear infinite;
+  }
+
+  @supports (animation-timeline: view()) {
+    .figure .fig-box {
+      animation: fig-reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+
+@keyframes node-resolve {
+  from {
+    opacity: 0.4;
+    transform: translateY(6px);
+    filter: blur(2px);
+  }
+}
+
+@keyframes wire-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes wire-flow {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+
+@keyframes fig-reveal {
+  from {
+    clip-path: inset(10% 0 0 0 round var(--radius));
+    opacity: 0.4;
+  }
+  to {
+    clip-path: inset(0 0 0 0 round var(--radius));
+    opacity: 1;
   }
 }

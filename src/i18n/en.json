@@ -4,5 +4,47 @@
     "experiments": "Experiments",
     "gpu": "GPU",
     "about": "About"
+  },
+  "skip": "Skip to content",
+  "network": {
+    "cpu": "CPU",
+    "gpu": "GPU",
+    "viewer": "Viewer",
+    "live": "in viewer",
+    "drag": "Drag the cloth",
+    "technique": "Technique shown in the viewer",
+    "canvas": "Live XPBD cloth simulation. Drag to pull it.",
+    "note": "Every technique is drawn on the same live XPBD cloth, as an illustration. It is not output from the projects.",
+    "open": "Open case study",
+    "solver": "{substeps} substeps, 1 iteration, dt {dt} ms",
+    "switch": {
+      "xpbd": "strain",
+      "snow": "snow",
+      "bloom": "bloom",
+      "ik": "ik error"
+    },
+    "modes": {
+      "xpbd": "Constraint strain",
+      "snow": "Snow by surface orientation",
+      "bloom": "Bloom bright pass",
+      "ik": "Joint error against reference"
+    },
+    "stats": {
+      "xpbd": "max strain",
+      "snow": "snow coverage",
+      "bloom": "bright quads",
+      "ik": "mean error",
+      "ikMax": "max"
+    }
+  },
+  "caseStudy": {
+    "node": "Node",
+    "runsOn": "Runs on",
+    "stack": "Stack",
+    "sections": "Sections",
+    "pending": "Media pending"
+  },
+  "gallery": {
+    "empty": "0 nodes"
   }
 }

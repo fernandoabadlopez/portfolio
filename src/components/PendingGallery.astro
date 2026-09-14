@@ -1,0 +1,21 @@
+---
+import { ui } from '../i18n/utils';
+
+interface Props {
+  /** Node name shown in the pending node's header. */
+  name: string;
+  /** Placeholder text, kept verbatim from the page. */
+  pending: string;
+}
+
+const { name, pending } = Astro.props;
+const lang = Astro.url.pathname.startsWith('/es/') ? 'es' : 'en';
+---
+
+<div class="node pending-node">
+  <span class="node-head">
+    <span class="node-name">{name}</span>
+    <span class="node-state">{ui[lang].gallery.empty}</span>
+  </span>
+  <p class="pending-body">{pending}</p>
+</div>

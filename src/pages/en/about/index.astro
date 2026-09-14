@@ -2,45 +2,56 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title="About — Fernando Abad López" lang="en">
-  <h1>About</h1>
+<BaseLayout title="About | Fernando Abad López" lang="en">
+  <article class="shell page">
+    <h1 class="page-title">About</h1>
 
-  <p class="mt-8">
-    I work on real-time simulation systems and 3D graphics. My territory is GPU shader programming,
-    position-based physics simulation (PBD, XPBD), kinematic system validation, and everything that
-    happens between the CPU and the graphics pipeline. I currently develop industrial simulation
-    systems within a digital twin environment.
-  </p>
+    <div class="prose page-prose">
+      <p>
+        I work on real-time simulation systems and 3D graphics. My territory is GPU shader
+        programming, position-based physics simulation (PBD, XPBD), kinematic system validation, and
+        everything that happens between the CPU and the graphics pipeline. I currently develop
+        industrial simulation systems within a digital twin environment.
+      </p>
 
-  <p>
-    I came to engineering the long way. I studied a higher vocational degree in Business
-    Administration and Finance, and it was in advanced office software that the question that
-    changed everything appeared: how does the thing inside a computer that makes it execute
-    something actually work. I moved to Valencia to study Multimedia Engineering and specialized in
-    GPU shaders, physics simulation, and algorithm validation against real data. My final degree
-    project, in collaboration with the Instituto de Biomecánica de Valencia, was awarded Distinction
-    (<em>Matrícula de Honor</em>).
-  </p>
+      <p>
+        I came to engineering the long way. I studied a higher vocational degree in Business
+        Administration and Finance, and it was in advanced office software that the question that
+        changed everything appeared: how does the thing inside a computer that makes it execute
+        something actually work. I moved to Valencia to study Multimedia Engineering and specialized
+        in GPU shaders, physics simulation, and algorithm validation against real data. My final
+        degree project, in collaboration with the Instituto de Biomecánica de Valencia, was awarded
+        Distinction (<em>Matrícula de Honor</em>).
+      </p>
 
-  <p>
-    I'm looking for international remote positions or relocation within the EU, in technical teams
-    working on simulation, real-time graphics, or adjacent systems.
-  </p>
+      <p>
+        I'm looking for international remote positions or relocation within the EU, in technical
+        teams working on simulation, real-time graphics, or adjacent systems.
+      </p>
+    </div>
 
-  <section>
-    <h2>Contact</h2>
-    <ul class="pl-0">
-      <li><strong>Email</strong> — nando.al2000@gmail.com</li>
-      <li>
-        <strong>GitHub</strong> —
-        <a href="https://github.com/fernandoabadlopez">github.com/fernandoabadlopez</a>
-      </li>
-      <li>
-        <strong>LinkedIn</strong> —
-        <a href="https://linkedin.com/in/fernando-abad-engineer">
-          linkedin.com/in/fernando-abad-engineer
-        </a>
-      </li>
-    </ul>
-  </section>
+    <section class="contact" aria-labelledby="contact">
+      <h2 id="contact" class="contact-title">Contact</h2>
+      <dl class="params-list contact-list">
+        <div>
+          <dt>Email</dt>
+          <dd><a href="mailto:nando.al2000@gmail.com">nando.al2000@gmail.com</a></dd>
+        </div>
+        <div>
+          <dt>GitHub</dt>
+          <dd>
+            <a href="https://github.com/fernandoabadlopez">github.com/fernandoabadlopez</a>
+          </dd>
+        </div>
+        <div>
+          <dt>LinkedIn</dt>
+          <dd>
+            <a href="https://linkedin.com/in/fernando-abad-engineer">
+              linkedin.com/in/fernando-abad-engineer
+            </a>
+          </dd>
+        </div>
+      </dl>
+    </section>
+  </article>
 </BaseLayout>

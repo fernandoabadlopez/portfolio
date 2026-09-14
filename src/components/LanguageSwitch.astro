@@ -9,17 +9,14 @@ const { lang } = Astro.props;
 const pathname = Astro.url.pathname;
 ---
 
-<ul class="m-0 flex max-w-none list-none gap-2 p-0 font-mono text-xs tracking-[0.05em] uppercase">
+<ul class="lang">
   {
     languages.map((code) => (
-      <li class="m-0">
+      <li>
         {code === lang ? (
           <span aria-current="true">{code}</span>
         ) : (
-          <a
-            href={alternatePath(pathname, lang, code)}
-            class="text-fg-muted no-underline hover:underline"
-          >
+          <a href={alternatePath(pathname, lang, code)} hreflang={code} lang={code}>
             {code}
           </a>
         )}

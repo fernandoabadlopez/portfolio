@@ -1,63 +1,91 @@
 ---
+import type { MarkdownHeading } from 'astro';
 import BaseLayout from './BaseLayout.astro';
 import StackList from '../components/StackList.astro';
-import type { Lang } from '../i18n/utils';
+import { ui, type Lang } from '../i18n/utils';
+import { domainOf } from '../lib/network';
+import { splitHyphenated } from '../lib/text';
 
 interface Props {
   title: string;
   tagline: string;
+  slug: string;
   stack?: string[];
   order?: number;
   lang?: Lang;
+  headings?: MarkdownHeading[];
 }
 
-const { title, tagline, stack = [], order = 0, lang = 'en' } = Astro.props;
+const { title, tagline, slug, stack = [], order = 0, lang = 'en', headings = [] } = Astro.props;
+const t = ui[lang].caseStudy;
+const sections = headings.filter((heading) => heading.depth === 2);
+const domain = domainOf(stack);
 ---
 
 <BaseLayout title={title} lang={lang}>
-  <article>
-    <header>
-      <h1>{title}</h1>
-      <p class="text-fg-muted mt-4 text-lg">{tagline}</p>
-      {
-        stack.length > 0 && (
-          <div class="mt-8">
-            <StackList stack={stack} />
-          </div>
-        )
-      }
+  <article class="shell case">
+    <header class="case-head">
+      <h1 class="case-title">
+        {
+          splitHyphenated(title).map((part) =>
+            part.nowrap ? <span class="nowrap">{part.text}</span> : part.text,
+          )
+        }
+      </h1>
+      <p class="case-tagline">{tagline}</p>
+
+      <dl class="params-list">
+        <div>
+          <dt>{t.node}</dt>
+          <dd><span class="node-name" transition:name={`node-${slug}`}>{slug}</span></dd>
+        </div>
+        <div>
+          <dt>{t.runsOn}</dt>
+          <dd>{ui[lang].network[domain]}</dd>
+        </div>
+        {
+          stack.length > 0 && (
+            <div>
+              <dt>{t.stack}</dt>
+              <dd>
+                <StackList stack={stack} />
+              </dd>
+            </div>
+          )
+        }
+      </dl>
     </header>
 
-    <hr class="border-border my-12 border-0 border-t" />
+    <div class="case-grid">
+      {
+        sections.length > 0 && (
+          <nav class="case-rail" aria-label={t.sections} data-case-rail>
+            <ol>
+              {sections.map((section) => (
+                <li>
+                  <a href={`#${section.slug}`}>{section.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )
+      }
 
-    <!-- Seeds the figure counters: fig-major is the case study's order and
-         never increments, fig-minor counts placeholders within this page. -->
-    <div class="case-body" style={`counter-reset: fig-major ${order} fig-minor 0`}>
-      <slot />
+      <!-- Seeds the figure counters: fig-major is the case study's order and
+           never increments, fig-minor counts figures within this page. -->
+      <div class="case-body prose" style={`counter-reset: fig-major ${order} fig-minor 0`}>
+        <slot />
+      </div>
     </div>
   </article>
 </BaseLayout>
 
-<style>
-  /*
-    Two-column grid: the first track holds the prose at reading width, flush
-    left with the rest of the page; the second is trailing space. Content
-    defaults to the prose column; media and code span both tracks so they are
-    not capped at 68ch.
-  */
-  .case-body {
-    display: grid;
-    grid-template-columns: min(var(--width-prose), 100%) 1fr;
-  }
+<script>
+  import { initCaseRail } from '../scripts/case-rail';
+  import { initFigures } from '../scripts/figures';
 
-  .case-body > :global(*) {
-    grid-column: 1;
-  }
-
-  .case-body > :global(figure.visual-placeholder),
-  .case-body > :global(figure.visual-placeholder-pair),
-  .case-body > :global(pre),
-  .case-body > :global(.full-width) {
-    grid-column: 1 / -1;
-  }
-</style>
+  document.addEventListener('astro:page-load', () => {
+    initCaseRail();
+    initFigures();
+  });
+</script>

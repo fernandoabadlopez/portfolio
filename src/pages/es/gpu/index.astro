@@ -1,8 +1,11 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PendingGallery from '../../../components/PendingGallery.astro';
 ---
 
 <BaseLayout title="GPU" lang="es">
-  <h1>GPU</h1>
-  <p class="text-fg-muted mt-6">[PENDING: GPU techniques gallery]</p>
+  <article class="shell page">
+    <h1 class="page-title">GPU</h1>
+    <PendingGallery name="gpu" pending="[PENDING: GPU techniques gallery]" />
+  </article>
 </BaseLayout>

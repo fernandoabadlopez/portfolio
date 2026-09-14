@@ -1,8 +1,11 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PendingGallery from '../../../components/PendingGallery.astro';
 ---
 
 <BaseLayout title="Experimentos" lang="es">
-  <h1>Experimentos</h1>
-  <p class="text-fg-muted mt-6">[PENDING: Experiments gallery]</p>
+  <article class="shell page">
+    <h1 class="page-title">Experimentos</h1>
+    <PendingGallery name="experimentos" pending="[PENDING: Experiments gallery]" />
+  </article>
 </BaseLayout>

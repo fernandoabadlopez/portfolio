@@ -1,0 +1,167 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import StackList from './StackList.astro';
+import { path, ui, type Lang } from '../i18n/utils';
+import { domainOf, techniqueFor } from '../lib/network';
+import { splitHyphenated } from '../lib/text';
+import { SOLVER } from '../scripts/cloth';
+
+interface Props {
+  entries: CollectionEntry<'case-studies'>[];
+  lang: Lang;
+}
+
+const { entries, lang } = Astro.props;
+const t = ui[lang].network;
+const base = path('work', lang);
+
+const nodes = entries.map((entry) => ({
+  slug: entry.data.slug,
+  title: entry.data.title,
+  tagline: entry.data.tagline,
+  stack: entry.data.stack,
+  href: `${base}${entry.data.slug}/`,
+  domain: domainOf(entry.data.stack),
+  technique: techniqueFor(entry.data.slug),
+}));
+
+const boxes = (['cpu', 'gpu'] as const)
+  .map((domain) => ({ domain, label: t[domain], nodes: nodes.filter((n) => n.domain === domain) }))
+  .filter((box) => box.nodes.length > 0);
+
+// Evaluation order: CPU box first, then GPU; the output node resolves last.
+// The technique switch follows the same order as the network.
+const ordered = boxes.flatMap((box) => box.nodes);
+const withTechnique = ordered.filter((n) => n.technique !== null);
+const pinned = withTechnique.find((n) => n.technique === 'xpbd') ?? withTechnique[0];
+const labels = JSON.stringify({ modes: t.modes, stats: t.stats });
+const solver = t.solver
+  .replace('{substeps}', String(SOLVER.substeps))
+  .replace('{dt}', SOLVER.dtMs.toFixed(1));
+---
+
+<div class="network" data-network data-labels={labels}>
+  <svg class="wires" data-wires aria-hidden="true"></svg>
+
+  <div class="graph" data-graph>
+    {
+      boxes.map((box) => (
+        <section class="netbox" aria-labelledby={`netbox-${box.domain}`}>
+          <h2 class="netbox-label" id={`netbox-${box.domain}`}>
+            {box.label}
+          </h2>
+          <ol class="nodes">
+            {box.nodes.map((node) => (
+              <li>
+                <a
+                  class="node"
+                  href={node.href}
+                  data-node
+                  data-technique={node.technique ?? undefined}
+                  data-active={node === pinned ? '' : undefined}
+                  style={`--i: ${ordered.indexOf(node)}`}
+                >
+                  <span class="node-head">
+                    <span class="node-name" transition:name={`node-${node.slug}`}>
+                      {node.slug}
+                    </span>
+                    {node.technique && <span class="node-state">{t.live}</span>}
+                  </span>
+                  <span class="node-title">
+                    {splitHyphenated(node.title).map((part) =>
+                      part.nowrap ? <span class="nowrap">{part.text}</span> : part.text,
+                    )}
+                  </span>
+                  <span class="node-detail">
+                    <span class="node-tagline" data-tagline>
+                      {node.tagline}
+                    </span>
+                    <StackList stack={node.stack} />
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ol>
+          <span class="netbox-port" data-box-port aria-hidden="true" />
+        </section>
+      ))
+    }
+  </div>
+
+  {
+    pinned && pinned.technique && (
+      <aside class="viewer" aria-label={t.viewer}>
+        <div class="viewer-frame">
+          <p class="viewer-bar">
+            <span data-viewer-mode>{t.modes[pinned.technique]}</span>
+            <span class="viewer-dim">{t.drag}</span>
+          </p>
+          <div class="viewer-stage">
+            <canvas class="viewer-canvas" data-cloth role="img" aria-label={t.canvas} />
+          </div>
+          <p class="viewer-readout">
+            <span>
+              <span class="viewer-dim" data-stat-label>
+                {t.stats[pinned.technique]}
+              </span>{' '}
+              <span data-stat-value>0.00 %</span>
+            </span>
+            <span class="viewer-dim viewer-solver">{solver}</span>
+          </p>
+        </div>
+
+        <div class="modes" role="group" aria-label={t.technique}>
+          {withTechnique.map((n) => (
+            <button
+              type="button"
+              class="mode"
+              data-mode-btn={n.technique}
+              aria-pressed={n === pinned ? 'true' : 'false'}
+            >
+              {n.technique && t.switch[n.technique]}
+            </button>
+          ))}
+        </div>
+
+        <p class="viewer-note">{t.note}</p>
+      </aside>
+    )
+  }
+
+  <div class="network-lower">
+    {
+      pinned && (
+        <div class="params" data-params>
+          <p class="params-name" data-param-name>
+            {pinned.slug}
+          </p>
+          <p class="params-tagline" data-param-tagline>
+            {pinned.tagline}
+          </p>
+          <div class="params-stack" data-param-stack>
+            <StackList stack={pinned.stack} />
+          </div>
+          <a class="params-link" href={pinned.href} data-param-link>
+            {t.open}
+          </a>
+        </div>
+      )
+    }
+
+    <a
+      class="node node-out"
+      href={path('about', lang)}
+      data-node-out
+      style={`--i: ${ordered.length}`}
+    >
+      <span class="node-head"><span class="node-name">NaN</span></span>
+      <span class="node-title">{ui[lang].nav.about}</span>
+    </a>
+  </div>
+</div>
+
+<script>
+  import { initNetwork } from '../scripts/network';
+
+  document.addEventListener('astro:page-load', initNetwork);
+</script>

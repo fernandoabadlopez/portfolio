@@ -4,5 +4,47 @@
     "experiments": "Experimentos",
     "gpu": "GPU",
     "about": "Sobre mí"
+  },
+  "skip": "Saltar al contenido",
+  "network": {
+    "cpu": "CPU",
+    "gpu": "GPU",
+    "viewer": "Visor",
+    "live": "en el visor",
+    "drag": "Arrastra la tela",
+    "technique": "Técnica mostrada en el visor",
+    "canvas": "Simulación de tela XPBD en vivo. Arrástrala para estirarla.",
+    "note": "Todas las técnicas se dibujan sobre la misma tela XPBD en vivo, a modo de ilustración. No es el resultado de los proyectos.",
+    "open": "Abrir caso de estudio",
+    "solver": "{substeps} substeps, 1 iteración, dt {dt} ms",
+    "switch": {
+      "xpbd": "tensión",
+      "snow": "nieve",
+      "bloom": "bloom",
+      "ik": "error ik"
+    },
+    "modes": {
+      "xpbd": "Tensión de restricciones",
+      "snow": "Nieve por orientación de superficie",
+      "bloom": "Pase de brillo del bloom",
+      "ik": "Error por joint frente a referencia"
+    },
+    "stats": {
+      "xpbd": "tensión máx.",
+      "snow": "cobertura de nieve",
+      "bloom": "quads brillantes",
+      "ik": "error medio",
+      "ikMax": "máx."
+    }
+  },
+  "caseStudy": {
+    "node": "Nodo",
+    "runsOn": "Se ejecuta en",
+    "stack": "Stack",
+    "sections": "Secciones",
+    "pending": "Media pendiente"
+  },
+  "gallery": {
+    "empty": "0 nodos"
   }
 }

@@ -1,5 +1,6 @@
 ---
 import { mediaType } from '../lib/media';
+import { ui } from '../i18n/utils';
 
 interface Props {
   /** Drives each box's aspect ratio: 16:9 for hero, 4:3 for inline and gallery. */
@@ -12,6 +13,7 @@ interface Props {
 }
 
 const { kind = 'inline', descriptionA, descriptionB, srcA, srcB } = Astro.props;
+const lang = Astro.url.pathname.startsWith('/es/') ? 'es' : 'en';
 
 function resolve(src: string | undefined, description: string) {
   const media = mediaType(src);
@@ -24,76 +26,38 @@ function resolve(src: string | undefined, description: string) {
 }
 
 const boxes = [resolve(srcA, descriptionA), resolve(srcB, descriptionB)];
+const pending = boxes.some((box) => !box.hasAsset);
 ---
 
-<figure class="visual-placeholder-pair my-12" data-kind={kind}>
-  <span class="fig-label text-fg-muted block font-mono text-xs tracking-[0.1em] uppercase"></span>
+<!-- Counts as a single figure: two angles of the same experiment share one
+     FIG label. The counter is seeded by .case-body in CaseStudyLayout.astro. -->
+<figure class="visual-placeholder-pair figure" data-kind={kind}>
+  <figcaption class="fig-bar">
+    <span class="fig-label"></span>
+    {pending && <span class="fig-state">{ui[lang].caseStudy.pending}</span>}
+  </figcaption>
 
-  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+  <div class="fig-pair">
     {
       boxes.map((box) => (
-        <div
-          class:list={[
-            'fig-box',
-            box.hasAsset
-              ? 'overflow-hidden'
-              : 'border-border flex items-center justify-center border border-dashed bg-transparent p-8',
-          ]}
-        >
+        <div class:list={['fig-box', !box.hasAsset && 'is-pending']}>
           {box.media === 'video' && (
             <video
-              class="h-full w-full object-cover"
               src={box.src}
               autoplay
               muted
               loop
               playsinline
               preload="metadata"
+              data-autopause
             />
           )}
 
-          {box.media === 'image' && (
-            <img
-              class="h-full w-full object-cover"
-              src={box.src}
-              alt={box.description}
-              loading="lazy"
-            />
-          )}
+          {box.media === 'image' && <img src={box.src} alt={box.description} loading="lazy" />}
 
-          {!box.hasAsset && (
-            <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
-              {box.description}
-            </p>
-          )}
+          {!box.hasAsset && <p>{box.description}</p>}
         </div>
       ))
     }
   </div>
 </figure>
-
-<style>
-  .visual-placeholder-pair {
-    margin-inline: 0;
-    /* Counts as a single figure: two angles of the same experiment share one
-       FIG label. Counter is seeded by .case-body — see CaseStudyLayout.astro. */
-    counter-increment: fig-minor;
-  }
-
-  .fig-label {
-    margin-bottom: 0.75rem;
-  }
-
-  .fig-label::before {
-    content: 'FIG ' counter(fig-major) '.' counter(fig-minor);
-  }
-
-  .visual-placeholder-pair[data-kind='hero'] .fig-box {
-    aspect-ratio: 16 / 9;
-  }
-
-  .visual-placeholder-pair[data-kind='inline'] .fig-box,
-  .visual-placeholder-pair[data-kind='gallery'] .fig-box {
-    aspect-ratio: 4 / 3;
-  }
-</style>

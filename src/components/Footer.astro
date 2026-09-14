@@ -10,11 +10,9 @@ const { lang } = Astro.props;
 const year = new Date().getFullYear();
 ---
 
-<footer class="border-border text-fg-muted mt-24 border-t text-xs">
-  <div
-    class="mx-auto flex w-full max-w-[1200px] items-center justify-between gap-6 px-6 py-8 md:px-12"
-  >
-    <p class="m-0 max-w-none">© {year} Fernando Abad López</p>
+<footer class="site-foot">
+  <div class="shell site-foot-row">
+    <p>© {year} Fernando Abad López</p>
     <LanguageSwitch lang={lang} />
   </div>
 </footer>

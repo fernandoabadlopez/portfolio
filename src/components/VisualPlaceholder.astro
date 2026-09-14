@@ -1,5 +1,6 @@
 ---
 import { mediaType } from '../lib/media';
+import { ui } from '../i18n/utils';
 
 interface Props {
   /** Drives the box aspect ratio: 16:9 for hero, 4:3 for inline and gallery. */
@@ -10,6 +11,7 @@ interface Props {
 }
 
 const { kind, description, src } = Astro.props;
+const lang = Astro.url.pathname.startsWith('/es/') ? 'es' : 'en';
 
 const media = mediaType(src);
 
@@ -21,69 +23,21 @@ if (media === 'unsupported') {
 const hasAsset = media === 'video' || media === 'image';
 ---
 
-<figure class="visual-placeholder my-12" data-kind={kind}>
-  <span class="fig-label text-fg-muted block font-mono text-xs tracking-[0.1em] uppercase"></span>
+<figure class="visual-placeholder figure" data-kind={kind}>
+  <figcaption class="fig-bar">
+    <span class="fig-label"></span>
+    {!hasAsset && <span class="fig-state">{ui[lang].caseStudy.pending}</span>}
+  </figcaption>
 
-  <div
-    class:list={[
-      'fig-box',
-      hasAsset
-        ? 'overflow-hidden'
-        : 'border-border flex items-center justify-center border border-dashed bg-transparent p-8',
-    ]}
-  >
+  <div class:list={['fig-box', !hasAsset && 'is-pending']}>
     {
       media === 'video' && (
-        <video
-          class="h-full w-full object-cover"
-          src={src}
-          autoplay
-          muted
-          loop
-          playsinline
-          preload="metadata"
-        />
+        <video src={src} autoplay muted loop playsinline preload="metadata" data-autopause />
       )
     }
 
-    {
-      media === 'image' && (
-        <img class="h-full w-full object-cover" src={src} alt={description} loading="lazy" />
-      )
-    }
+    {media === 'image' && <img src={src} alt={description} loading="lazy" />}
 
-    {
-      !hasAsset && (
-        <p class="text-fg-muted font-body m-0 max-w-[40ch] text-center text-sm leading-normal">
-          {description}
-        </p>
-      )
-    }
+    {!hasAsset && <p>{description}</p>}
   </div>
 </figure>
-
-<style>
-  .visual-placeholder {
-    margin-inline: 0;
-    /* Counter is seeded by .case-body, which sets fig-major to the case
-       study's `order` and resets fig-minor. See CaseStudyLayout.astro. */
-    counter-increment: fig-minor;
-  }
-
-  .fig-label {
-    margin-bottom: 0.75rem;
-  }
-
-  .fig-label::before {
-    content: 'FIG ' counter(fig-major) '.' counter(fig-minor);
-  }
-
-  .visual-placeholder[data-kind='hero'] .fig-box {
-    aspect-ratio: 16 / 9;
-  }
-
-  .visual-placeholder[data-kind='inline'] .fig-box,
-  .visual-placeholder[data-kind='gallery'] .fig-box {
-    aspect-ratio: 4 / 3;
-  }
-</style>
