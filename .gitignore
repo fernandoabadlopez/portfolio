@@ -16,3 +16,8 @@ pnpm-debug.log*
 .DS_Store
 # jetbrains setting folder
 .idea/
+# impeccable working artifacts (screenshots, build state, decision mocks)
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/
+.impeccable/config.local.json
