@@ -1239,7 +1239,8 @@
 
 @keyframes wire-flow {
   to {
-    stroke-dashoffset: -11;
+    /* One full 7 + 5 dash period, so the loop is seamless. */
+    stroke-dashoffset: -12;
   }
 }
 

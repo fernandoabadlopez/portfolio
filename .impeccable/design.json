@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-14T12:00:00Z",
+  "title": "Design System: NaN",
+  "extensions": {
+    "colorMeta": {
+      "chartreuse-signal": { "role": "primary", "displayName": "Chartreuse Signal", "canonical": "#c6f432", "tonalRamp": ["#2a3606", "#44570b", "#607b12", "#7fa21a", "#a1cb24", "#c6f432", "#dcf98a", "#f1fdd6"] },
+      "network-ground": { "role": "neutral", "displayName": "Network Ground", "canonical": "#e3e6e9", "tonalRamp": ["#1e2124", "#363a3e", "#51565b", "#6f757b", "#90969c", "#b5babf", "#e3e6e9", "#f5f6f7"] },
+      "node-body": { "role": "neutral", "displayName": "Node Body", "canonical": "#f1f3f4", "tonalRamp": ["#1f2122", "#383b3d", "#54585a", "#73777a", "#95999c", "#bcc0c2", "#dfe2e3", "#f1f3f4"] },
+      "netbox-grey": { "role": "neutral", "displayName": "Netbox Grey", "canonical": "#d8dce0", "tonalRamp": ["#1d2023", "#35393d", "#4f555a", "#6d7379", "#8e949a", "#b3b8bd", "#d8dce0", "#eff1f3"] },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#101214", "tonalRamp": ["#101214", "#262a2e", "#3f454b", "#5b6168", "#7b8188", "#a0a5ab", "#c9cdd1", "#eef0f2"] },
+      "ink-quiet": { "role": "neutral", "displayName": "Ink Quiet", "canonical": "#4a5057", "tonalRamp": ["#1a1c1f", "#2f3337", "#4a5057", "#666d74", "#868c93", "#a9aeb4", "#cfd2d6", "#eff0f2"] },
+      "wire-grey": { "role": "neutral", "displayName": "Wire Grey", "canonical": "#8a9096", "tonalRamp": ["#1c1e20", "#33373a", "#4e5357", "#6b7075", "#8a9096", "#abb0b5", "#cfd2d5", "#eff0f1"] },
+      "hairline": { "role": "neutral", "displayName": "Hairline", "canonical": "#c3c8ce", "tonalRamp": ["#1d2023", "#35393e", "#50565c", "#6e757c", "#9097a0", "#c3c8ce", "#dde0e3", "#f2f3f5"] },
+      "viewer-ground": { "role": "neutral", "displayName": "Viewer Ground", "canonical": "#101214", "tonalRamp": ["#101214", "#262a2e", "#3f454b", "#5b6168", "#7b8188", "#a0a5ab", "#c9cdd1", "#eef0f2"] },
+      "viewer-ink": { "role": "neutral", "displayName": "Viewer Ink", "canonical": "#e3e6e9", "tonalRamp": ["#1e2124", "#363a3e", "#51565b", "#6f757b", "#90969c", "#b5babf", "#e3e6e9", "#f5f6f7"] },
+      "viewer-ink-quiet": { "role": "neutral", "displayName": "Viewer Ink Quiet", "canonical": "#9aa2aa", "tonalRamp": ["#1c1f22", "#34393e", "#4f565d", "#6d757d", "#9aa2aa", "#b4bac0", "#d3d7db", "#f0f2f3"] },
+      "viewer-hairline": { "role": "neutral", "displayName": "Viewer Hairline", "canonical": "#262a2e", "tonalRamp": ["#101214", "#262a2e", "#3f454b", "#5b6168", "#7b8188", "#a0a5ab", "#c9cdd1", "#eef0f2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The home name only; wide and very heavy." },
+      "headline": { "displayName": "Headline", "purpose": "Case study and page titles, max 17em." },
+      "title": { "displayName": "Title", "purpose": "Prose h2 and the contact heading." },
+      "subtitle": { "displayName": "Subtitle", "purpose": "Prose h3." },
+      "node-title": { "displayName": "Node Title", "purpose": "Titles inside nodes; 1.0625rem on the output node." },
+      "body": { "displayName": "Body", "purpose": "Case-study prose at a 68ch measure." },
+      "brand": { "displayName": "Brand", "purpose": "The NaN mark in the header and on the output node." },
+      "label": { "displayName": "Label", "purpose": "Mono node names, netbox labels, parameter names, path bar." },
+      "label-small": { "displayName": "Label Small", "purpose": "Mono stack tokens, switch buttons, viewer bands, figure bars, language switch." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.23, 1, 0.32, 1)", "purpose": "Entrances, press scale, parameter pane swap." },
+      { "name": "ease-in-out", "value": "cubic-bezier(0.77, 0, 0.175, 1)", "purpose": "Wire draw during the first-visit evaluation order." },
+      { "name": "colour-transition", "value": "150ms ease", "purpose": "Colour, border and underline changes on hover and state; plain ease is deliberate." },
+      { "name": "press", "value": "transform 160ms var(--ease-out); scale(0.98) nodes, scale(0.97) switch buttons", "purpose": ":active feedback on nodes and technique buttons." },
+      { "name": "node-resolve", "value": "460ms var(--ease-out), stagger 70ms by --i, output node at 820ms; from opacity 0.4, translateY(6px), blur(2px)", "purpose": "First-visit home entrance, gated by [data-cook] and prefers-reduced-motion: no-preference." },
+      { "name": "wire-draw", "value": "480ms var(--ease-in-out), delay 360ms + --i * 70ms, pathLength 1 dashoffset 1 to 0", "purpose": "Wires draw after their nodes during the entrance; same gating." },
+      { "name": "wire-flow", "value": "700ms linear infinite, dasharray 7 5", "purpose": "Flow along the active wire after the entrance, motion allowed only." },
+      { "name": "params-swap", "value": "180ms var(--ease-out); opacity 0.35 to 1, blur 2px to 0 (WAAPI)", "purpose": "Parameter pane content change on node preview; skipped under reduced motion." },
+      { "name": "fig-reveal", "value": "animation-timeline: view(); range entry 0% to entry 55%; clip-path inset(10% 0 0 0) to 0, opacity 0.4 to 1", "purpose": "Scroll-linked figure reveal behind @supports (animation-timeline: view())." }
+    ],
+    "breakpoints": [
+      { "name": "phone-narrow", "value": "max-width 479.98px", "purpose": "Nav splits to two rows; technique switch becomes 2x2; parameter lists stack label over value." },
+      { "name": "tablet", "value": "min-width 768px", "purpose": "Graph two columns; lower row flex with 15rem output node; node details hide; pane shows tagline and stack; viewer 3fr/2fr up to 1179px; figure pairs two-up." },
+      { "name": "desktop", "value": "min-width 1180px", "purpose": "Network 7fr/5fr with spanning viewer; SVG wires and box ports shown; output node left of pane; sticky 13.5rem case rail." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Node",
+      "kind": "card",
+      "refersTo": "node",
+      "description": "A case study as a network node: mono header with slug and printed state, grotesk title; active header in chartreuse.",
+      "html": "<div class=\"ds-nodes\"><a class=\"ds-node\" href=\"#\" data-active><span class=\"ds-node-head\"><span class=\"ds-node-name\">xpbd</span><span class=\"ds-node-state\">in viewer</span></span><span class=\"ds-node-title\">XPBD vs PBD: real-time cloth simulator</span></a><a class=\"ds-node\" href=\"#\"><span class=\"ds-node-head\"><span class=\"ds-node-name\">bloom</span></span><span class=\"ds-node-title\">Bloom post-processing pipeline in OpenGL</span></a></div>",
+      "css": ".ds-nodes { display: grid; gap: 0.625rem; max-width: 22rem; } .ds-node { display: flex; flex-direction: column; background: var(--panel, #f1f3f4); color: var(--ink, #101214); border: 1px solid var(--rule, #c3c8ce); border-radius: 4px; text-decoration: none; font-family: 'Martian Grotesk', ui-sans-serif, system-ui, sans-serif; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), border-color 150ms ease; } .ds-node:hover { border-color: var(--ink, #101214); } .ds-node:focus-visible { outline: 2px solid var(--ink, #101214); outline-offset: 3px; } .ds-node:active { transform: scale(0.98); } .ds-node-head { display: flex; justify-content: space-between; gap: 0.5rem; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--rule, #c3c8ce); border-radius: 3px 3px 0 0; font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.75rem; transition: background-color 150ms ease; } .ds-node-name { font-weight: 500; } .ds-node-state { display: none; font-size: 0.6875rem; } .ds-node[data-active] .ds-node-head { background: var(--accent, #c6f432); } .ds-node[data-active] .ds-node-state { display: inline; } .ds-node-title { padding: 0.5rem 0.5rem 0.75rem; font-size: 0.9375rem; font-weight: 560; line-height: 1.3; }"
+    },
+    {
+      "name": "Output Node",
+      "kind": "card",
+      "refersTo": "node-output",
+      "description": "The single ink output node, NaN, that the network merges into; links to About.",
+      "html": "<a class=\"ds-node-out\" href=\"#\"><span class=\"ds-out-head\">NaN</span><span class=\"ds-out-title\">About</span></a>",
+      "css": ".ds-node-out { display: flex; flex-direction: column; width: 15rem; background: var(--ink, #101214); color: var(--ground, #e3e6e9); border: 1px solid var(--ink, #101214); border-radius: 4px; text-decoration: none; font-family: 'Martian Grotesk', ui-sans-serif, system-ui, sans-serif; transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1); } .ds-node-out:active { transform: scale(0.98); } .ds-node-out:focus-visible { outline: 2px solid var(--ink, #101214); outline-offset: 3px; } .ds-out-head { padding: 0.3rem 0.5rem; border-bottom: 1px solid #33383d; font-weight: 900; font-stretch: 160%; font-size: 0.875rem; } .ds-out-title { padding: 0.5rem 0.5rem 0.75rem; font-size: 1.0625rem; font-weight: 560; } .ds-node-out:hover .ds-out-title { text-decoration: underline; text-underline-offset: 0.3em; }"
+    },
+    {
+      "name": "Technique Switch",
+      "kind": "button",
+      "refersTo": "mode-button",
+      "description": "Segmented mono buttons that pin the viewer's technique; pressed state is ink.",
+      "html": "<div class=\"ds-modes\" role=\"group\"><button class=\"ds-mode\" aria-pressed=\"true\">strain</button><button class=\"ds-mode\" aria-pressed=\"false\">ik error</button><button class=\"ds-mode\" aria-pressed=\"false\">bloom</button><button class=\"ds-mode\" aria-pressed=\"false\">snow</button></div>",
+      "css": ".ds-modes { display: flex; gap: 1px; padding: 1px; background: var(--rule, #c3c8ce); border-radius: 4px; overflow: hidden; max-width: 34rem; } .ds-mode { flex: 1 1 auto; padding: 0.4rem 0.5rem; border: 0; background: var(--panel, #f1f3f4); color: var(--ink-2, #4a5057); font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.6875rem; cursor: pointer; transition: background-color 150ms ease, color 150ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1); } .ds-mode:not([aria-pressed='true']):hover { background: var(--ground, #e3e6e9); color: var(--ink, #101214); } .ds-mode:focus-visible { outline: 2px solid var(--ink, #101214); outline-offset: 3px; } .ds-mode:active { transform: scale(0.97); } .ds-mode[aria-pressed='true'] { background: var(--ink, #101214); color: var(--ground, #e3e6e9); }"
+    },
+    {
+      "name": "Viewer Frame",
+      "kind": "custom",
+      "refersTo": "viewer-frame",
+      "description": "Dark frame for rendered output with constant-height mono bands above and below the stage.",
+      "html": "<div class=\"ds-viewer\"><p class=\"ds-viewer-bar\"><span>Constraint strain</span><span class=\"ds-dim\">Drag the cloth</span></p><div class=\"ds-viewer-stage\"></div><p class=\"ds-viewer-readout\"><span><span class=\"ds-dim\">max strain</span> 13.92 %</span><span class=\"ds-dim\">20 substeps, 1 iteration, dt 16.7 ms</span></p></div>",
+      "css": ".ds-viewer { max-width: 30rem; overflow: hidden; background: var(--viewer-ground, #101214); color: var(--viewer-ink, #e3e6e9); border-radius: 4px; } .ds-viewer-bar, .ds-viewer-readout { display: flex; justify-content: space-between; gap: 0.25rem 1rem; margin: 0; padding: 0.45rem 0.75rem; font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.6875rem; line-height: 1.5; white-space: nowrap; } .ds-viewer-bar { border-bottom: 1px solid #262a2e; } .ds-viewer-readout { flex-direction: column; gap: 0; border-top: 1px solid #262a2e; font-variant-numeric: tabular-nums; } .ds-viewer-stage { aspect-ratio: 16 / 11; } .ds-dim { color: var(--viewer-ink-2, #9aa2aa); }"
+    },
+    {
+      "name": "Parameter Pane",
+      "kind": "card",
+      "refersTo": "params-pane",
+      "description": "Parameters of the previewed node: mono name, tagline, stack tokens and the open link.",
+      "html": "<div class=\"ds-params\"><p class=\"ds-params-name\">xpbd</p><p class=\"ds-params-tagline\">Cloth simulator built on PBD and evolved into XPBD.</p><ul class=\"ds-stack\"><li>Processing</li><li>Java</li><li>P3D</li></ul><a class=\"ds-params-link\" href=\"#\">Open case study</a></div>",
+      "css": ".ds-params { display: grid; gap: 0.625rem; max-width: 30rem; padding: 0.875rem; background: var(--panel, #f1f3f4); color: var(--ink, #101214); border: 1px solid var(--rule, #c3c8ce); border-radius: 4px; font-family: 'Martian Grotesk', ui-sans-serif, system-ui, sans-serif; } .ds-params p { margin: 0; } .ds-params-name { font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.75rem; font-weight: 500; } .ds-params-tagline { font-size: 0.9375rem; line-height: 1.45; } .ds-stack { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: 0; padding: 0; list-style: none; } .ds-stack li { padding: 0.125rem 0.4rem; border: 1px solid var(--rule, #c3c8ce); border-radius: 4px; background: var(--panel, #f1f3f4); color: var(--ink-2, #4a5057); font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.6875rem; line-height: 1.5; } .ds-params-link { justify-self: start; color: inherit; font-size: 0.875rem; font-weight: 600; text-decoration: underline; text-decoration-color: var(--wire, #8a9096); text-decoration-thickness: 1px; text-underline-offset: 0.35em; transition: text-decoration-color 150ms ease; } .ds-params-link:hover { text-decoration-color: currentColor; } .ds-params-link:focus-visible { outline: 2px solid var(--ink, #101214); outline-offset: 3px; }"
+    },
+    {
+      "name": "Stack Token",
+      "kind": "chip",
+      "refersTo": "stack-token",
+      "description": "Static mono token naming a technology in a node's stack.",
+      "html": "<ul class=\"ds-chips\"><li>C++</li><li>OpenGL</li><li>GLSL</li></ul>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 0.375rem; margin: 0; padding: 0; list-style: none; } .ds-chips li { padding: 0.125rem 0.4rem; border: 1px solid var(--rule, #c3c8ce); border-radius: 4px; background: var(--panel, #f1f3f4); color: var(--ink-2, #4a5057); font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.6875rem; line-height: 1.5; }"
+    },
+    {
+      "name": "Site Navigation",
+      "kind": "nav",
+      "refersTo": "lang-switch-current",
+      "description": "Sticky header: heavy wide NaN mark, underline-reveal text links, mono EN/ES segmented switch.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-brand\" href=\"#\">NaN</a><ul class=\"ds-links\"><li><a href=\"#\">Experiments</a></li><li><a href=\"#\">GPU</a></li><li><a href=\"#\" aria-current=\"page\">About</a></li></ul><div class=\"ds-lang\"><span>EN</span><a href=\"#\">ES</a></div></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 0.5rem 1.75rem; min-height: 3.5rem; padding: 0.5rem 1.5rem; background: var(--ground, #e3e6e9); color: var(--ink, #101214); border-bottom: 1px solid var(--rule, #c3c8ce); font-family: 'Martian Grotesk', ui-sans-serif, system-ui, sans-serif; } .ds-brand { margin-right: auto; color: inherit; font-weight: 900; font-stretch: 160%; font-size: 1.125rem; letter-spacing: -0.02em; text-decoration: none; } .ds-links { display: flex; gap: 1.75rem; margin: 0; padding: 0; list-style: none; font-size: 0.875rem; } .ds-links a { color: inherit; text-decoration: underline; text-decoration-color: transparent; text-decoration-thickness: 1px; text-underline-offset: 0.35em; transition: text-decoration-color 150ms ease; } .ds-links a:hover { text-decoration-color: currentColor; } .ds-links a[aria-current='page'] { text-decoration-color: var(--ink, #101214); text-decoration-thickness: 2px; } .ds-nav a:focus-visible { outline: 2px solid var(--ink, #101214); outline-offset: 3px; border-radius: 2px; } .ds-lang { display: flex; border: 1px solid var(--rule, #c3c8ce); border-radius: 4px; overflow: hidden; font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.6875rem; text-transform: uppercase; } .ds-lang span, .ds-lang a { display: block; padding: 0.2rem 0.5rem; text-decoration: none; } .ds-lang span { background: var(--ink, #101214); color: var(--ground, #e3e6e9); } .ds-lang a { color: var(--ink-2, #4a5057); transition: background-color 150ms ease; } .ds-lang a:hover { background: var(--panel-2, #d8dce0); color: var(--ink, #101214); }"
+    },
+    {
+      "name": "Pending Figure",
+      "kind": "custom",
+      "refersTo": "viewer-frame",
+      "description": "Numbered figure whose asset is missing: printed state in the mono bar, hatched body with the description.",
+      "html": "<figure class=\"ds-figure\"><figcaption class=\"ds-fig-bar\"><span>FIG 2.1</span><span>Media pending</span></figcaption><div class=\"ds-fig-box\"><p>Bloom bright pass over the scene, before and after threshold.</p></div></figure>",
+      "css": ".ds-figure { margin: 0; max-width: 32rem; } .ds-fig-bar { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: 0.5rem; color: var(--ink-2, #4a5057); font-family: 'Martian Mono', ui-monospace, monospace; font-size: 0.6875rem; } .ds-fig-box { display: grid; place-items: center; aspect-ratio: 4 / 3; padding: 1.5rem; border: 1px solid var(--rule, #c3c8ce); border-radius: 4px; background: repeating-linear-gradient(135deg, var(--rule, #c3c8ce) 0 1px, transparent 1px 11px), var(--panel, #f1f3f4); } .ds-fig-box p { max-width: 40ch; margin: 0; padding: 0.625rem 0.75rem; background: var(--panel, #f1f3f4); color: var(--ink-2, #4a5057); border-radius: 4px; font-family: 'Martian Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.8125rem; line-height: 1.5; text-align: center; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Node Network",
+    "overview": "The site is laid out like a compositing or procedural node graph (Houdini, Nuke). The work sits in network boxes grouped by where it runs, CPU or GPU. Each case study is a node, named by its slug. Wires carry the evaluation from the boxes into one output node, NaN. The ground is a cool, even grey. Node bodies are a shade lighter, and anything rendered or computed (the live cloth, videos, code) sits inside a dark viewer frame. The page reads as a working tool, not a showcase. Status is printed inside the nodes as text, never pinned on as a badge.\n\nDensity is medium. Nodes are compact, with a mono header strip and a proportional title, and case studies open into a long read at a fixed measure. The type does the expressive work: Martian Grotesk set wide and very heavy for names and titles, regular for reading. Martian Mono is kept for identifiers, parameters, figure labels and code. Surfaces are flat. Structure comes from 1px hairlines, tonal steps between ground, box and node, and one signal colour that marks what is active.\n\nThere is one theme: a light ground with dark viewer frames. There is no dark mode and no toggle. The system rejects both the name-hero-over-project-card-grid layout and the near-black neon developer portfolio.",
+    "keyCharacteristics": [
+      "Cool grey tonal layering (ground, netbox, node body) with hairline rules and no shadows.",
+      "One chartreuse signal for the active path: the flowing wire, the selected node header and its port, the current rail section, and text selection.",
+      "Wide, heavy Martian Grotesk for display. Martian Mono only for things a tool would print.",
+      "A single 4px corner radius on every surface. Ports and rail markers are square 7px nodes.",
+      "Dark viewer frames hold everything rendered: canvas, video, code.",
+      "Motion follows evaluation order: nodes resolve, wires draw, the output resolves last."
+    ],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Chartreuse means \"this is the live path\". If an element isn't active, selected or current, it doesn't get chartreuse.", "section": "colors" },
+      { "name": "The Rendered-Goes-Dark Rule", "body": "Anything computed or rendered (canvas, video, image, code) sits on the viewer ground. UI chrome never does.", "section": "colors" },
+      { "name": "The Tool Prints In Mono Rule", "body": "Mono is for things a node editor would print: slugs, parameters, readouts, figure numbers, code. Sentences use the grotesk.", "section": "typography" },
+      { "name": "The Width Is Weight Rule", "body": "Hierarchy climbs by weight and stretch together. The larger the role, the wider and heavier it gets (110% → 118% → 138% → 160% for the mark).", "section": "typography" },
+      { "name": "The Wires Only Where They Land Rule", "body": "Draw SVG wires only when the output node sits below the graph. Wherever it follows the viewer, each box keeps its own bus lane instead.", "section": "layout" },
+      { "name": "The Hairline, Not Shadow Rule", "body": "Separate with a 1px Hairline or a tonal step, never with a shadow. Hover and focus change stroke colour, never elevation.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reserve Chartreuse Signal for the active or current item, and keep it off body text and large fills.",
+      "Do put rendered or computed content (canvas, video, code) in a dark viewer-ground frame with a 4px radius.",
+      "Do print states as mono text inside the node or figure bar (\"in viewer\", \"Media pending\", \"0 nodes\").",
+      "Do use Martian Mono only for identifiers, parameters, readouts, figure labels and code. Use wide, heavy Martian Grotesk for names and titles.",
+      "Do separate surfaces with 1px Hairline rules and tonal steps (ground → netbox → node body).",
+      "Do gate hover styles behind (hover: hover) and (pointer: fine), and gate all keyframe motion behind prefers-reduced-motion: no-preference.",
+      "Do mark missing media with the hatched pending body and its description, never with a stand-in image."
+    ],
+    "donts": [
+      "Don't add box-shadows or elevation on hover. Hover changes stroke or fill colour.",
+      "Don't introduce a second accent colour or a dark-mode theme.",
+      "Don't use any radius other than 4px (3px for inline code, 1px insets for flush children).",
+      "Don't draw SVG wires into the output node where it doesn't sit below the graph (below 1180px).",
+      "Don't fall back to a hero-over-card-grid layout or a near-black neon dev-portfolio look.",
+      "Don't badge states with pills or coloured tags."
+    ]
+  }
+}
